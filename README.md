@@ -28,3 +28,6 @@ you can add paper book using the xls files (experimental)
 ## Sujets en cours de dev
 * import de livres papier
 * création indicateurs
+
+
+inspired by https://erdavis.com/
