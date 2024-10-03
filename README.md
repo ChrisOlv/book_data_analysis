@@ -8,7 +8,7 @@
 
 #### parameters :
 absolute path : define the path of the local repo on your machine. Change it when your change your machine
-relative path (book.xls & sqlite3) : the relative location of the local sources. Don't touch this
+relative path (book.xls & sqlite3) : the relative location of the local sources. Don't touch this. --> Technically, there is no need of these parameters, we can directly type the relative path in the query source.
 
 #### duplicates book
 Ereader oftentimes create duplicate when you mess with calibre.
