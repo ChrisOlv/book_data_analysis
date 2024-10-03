@@ -15,15 +15,11 @@ Ereader oftentimes create duplicate when you mess with calibre.
 To regroup books I use this method : 
 * create a column "id long"
 
-
-
 ### Update : 
 overwrite the statistic.sqlite3 file from your e-reader.
 you can add paper book using the xls files (experimental)
 
-
 ### Utilisation 
-
 
 ## Sujets en cours de dev
 * import de livres papier
