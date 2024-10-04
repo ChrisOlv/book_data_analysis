@@ -22,8 +22,7 @@ you can add paper book using the xls files (experimental)
 ### Utilisation 
 
 ## Sujets en cours de dev
-* import de livres papier
-* création indicateurs
+Check out the github repo to get the backlog and inprogress tasks
 
 
 inspired by https://erdavis.com/
