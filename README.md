@@ -15,6 +15,13 @@ Ereader oftentimes create duplicate when you mess with calibre.
 To regroup books I use this method : 
 * create a column "id long"
 
+#### category
+1. faire un extract de kobo analysis / liste des livres
+2. run le script "ajout_category".py
+    Ce script ajoute une colonne category et utilise gpt4o pour générer la categorie et sous categorie du livre
+3. l'export se retrouve dans "export xls"
+4. dans kobo-analysis, la table liste_livre_category vient enrichir la table liste_livre
+
 ### Update : 
 overwrite the statistic.sqlite3 file from your e-reader.
 you can add paper book using the xls files (experimental)
