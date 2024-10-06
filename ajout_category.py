@@ -56,7 +56,7 @@ chain_category = (
 
 # enrichissement du excel source
 df = pd.read_excel("export_xls\liste_livre.xlsx")
-df = df.drop('categorie', axis=1)
+df = df.drop('categorie et sous categorie', axis=1)
 df['oeuvre'] = df[['Titre', 'Auteurs']].astype(str).agg(' - '.join, axis=1)
 
 # fonction pour créer une colonne avec un résumé de la question. Servira à gagner en lisibilité sur les visuels
