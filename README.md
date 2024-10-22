@@ -32,4 +32,22 @@ you can add paper book using the xls files (experimental)
 Check out the github repo to get the backlog and inprogress tasks
 
 
-inspired by https://erdavis.com/
+# database v3
+## workflow : 
+1. mise à jours du sqlite3
+2. data warehouse : 
+script python qui s'active à la mise à jour du fichier sqlite3: 
+récupération des tables
+préparation
+génération de la colonne genAI
+extraction des tables en .parquet
+3. power bi est connecté à ces tables
+4. mise à jour de power BI en local lors de la consultation
+
+
+
+
+
+
+# credit
+Dataviz style : inspired by https://erdavis.com/
