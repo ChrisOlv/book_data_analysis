@@ -35,7 +35,7 @@ print("-------------")
 # Clôture de la connexion à la base de données
 conn.close()
 
-
+# test
 
 # Afficher un message de confirmation
 print("Les tables ont été mises à jour !")
