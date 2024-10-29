@@ -138,6 +138,9 @@ df_page_stat_data['Heure de début de lecture'] = df_page_stat_data['start_time'
 df_page_stat_data['Heure'] = df_page_stat_data['start_time'].dt.hour
 df_page_stat_data['Heure en décimal'] = df_page_stat_data['Heure'] + df_page_stat_data['start_time'].dt.minute / 60
 df_page_stat_data['Jour Précédent'] = (df_page_stat_data['start_time'] - pd.Timedelta(days=1)).dt.date
+# ajoute une colonne "Est Consécutif" 
+df_page_stat_data['Est Consécutif'] = (df_page_stat_data['date lecture'].shift(1) == df_page_stat_data['date lecture']) | (df_page_stat_data['date lecture'].shift(1) == df_page_stat_data['date lecture'] - pd.Timedelta(days=1))
+
 
 # Afficher un message de confirmation
 print("="*80)
