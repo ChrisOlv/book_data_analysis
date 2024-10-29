@@ -1,13 +1,13 @@
-azure-core==1.29.0           # Requis pour AzureChatOpenAI, AzureOpenAIEmbeddings dans langchain_openai
-langchain-core==0.3.13       # Requis pour langchain_core
-langchain-openai==0.2.3     # Requis pour AzureChatOpenAI, AzureOpenAIEmbeddings
-python-dotenv==1.0.1    # Requis pour find_dotenv, load_dotenv
-pandas==2.2.3                # Requis pour pandas
-seaborn==0.13.2              # Requis pour seaborn
-matplotlib==3.9.2            # Requis pour matplotlib et mdates
-sqlite3==3.36.0              # Utilisé dans votre code (cependant, sqlite3 est en général inclus dans Python standard)
-fastparquet==2024.5.0
-openai==1.52.2
+azure-core           # Requis pour AzureChatOpenAI, AzureOpenAIEmbeddings dans langchain_openai
+langchain-core     # Requis pour langchain_core
+langchain-openai    # Requis pour AzureChatOpenAI, AzureOpenAIEmbeddings
+python-dotenv  # Requis pour find_dotenv, load_dotenv
+pandas              # Requis pour pandas
+seaborn            # Requis pour seaborn
+matplotlib            # Requis pour matplotlib et mdates
+fastparquet
+openai
+pyarrow
 
 
 # OLD REQUIREMENT SI BESOIN : 
@@ -104,7 +104,7 @@ openai==1.52.2
 # olefile==0.47
 # onnxruntime==1.19.2
 # openai==1.50.0
-# openpyxl==3.1.5
+openpyxl==3.1.5
 # opentelemetry-api==1.27.0
 # opentelemetry-exporter-otlp-proto-common==1.27.0
 # opentelemetry-exporter-otlp-proto-grpc==1.27.0
@@ -166,7 +166,6 @@ openai==1.52.2
 # soupsieve==2.6
 # SQLAlchemy==2.0.35
 # stack-data==0.6.3
-# starlette==0.38.6
 # sympy==1.13.3
 # tabulate==0.9.0
 # tenacity==8.5.0
