@@ -1,3 +1,7 @@
+# version 1.1 pour ajouter la mise à jour incrémentale
+# mise à jour incrémentale prête dans le notebook "analys_temporelle.ipynb", à partir de la cellule ### book_table
+# y'a plus qu'à !
+
 import time
 # Start the timer
 start_time = time.time()
