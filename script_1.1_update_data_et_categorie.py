@@ -137,15 +137,15 @@ else:
     print(nb_lignes_updated,"livres ajoutés")
 
 
-# drop id 42,41, 43, 18,13,1,6,7
-df_updated = df_updated[df_updated['id'] != 41]
-df_updated = df_updated[df_updated['id'] != 43]
-df_updated = df_updated[df_updated['id'] != 18]
-df_updated = df_updated[df_updated['id'] != 13]
-df_updated = df_updated[df_updated['id'] != 1]
-df_updated = df_updated[df_updated['id'] != 6]
-df_updated = df_updated[df_updated['id'] != 7]
-df_updated = df_updated[df_updated['id'] != 42]
+# # drop id 42,41, 43, 18,13,1,6,7
+# df_updated = df_updated[df_updated['id'] != 41]
+# df_updated = df_updated[df_updated['id'] != 43]
+# df_updated = df_updated[df_updated['id'] != 18]
+# df_updated = df_updated[df_updated['id'] != 13]
+# df_updated = df_updated[df_updated['id'] != 1]
+# df_updated = df_updated[df_updated['id'] != 6]
+# df_updated = df_updated[df_updated['id'] != 7]
+# df_updated = df_updated[df_updated['id'] != 42]
 
 
 print("chargement de la liste des livres terminée")
