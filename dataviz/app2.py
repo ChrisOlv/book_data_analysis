@@ -34,7 +34,7 @@ category_counts = df_book_streamlit['Catégorie'].value_counts().reset_index()
 category_counts.columns = ['Catégorie', 'nombre de livre']
 
 # Créer un graphique à barres horizontal
-category_counts_sorted = category_counts.sort_values(by='nombre de livre', ascending=False)
+category_counts_sorted = category_counts.sort_values(by='nombre de livre', ascending=True)
 
 fig0 = px.bar(category_counts_sorted,
              x='nombre de livre', 
@@ -61,7 +61,7 @@ df_book_updated['month'] = pd.Categorical(df_book_updated['month'], categories=m
 books_per_month = df_book_updated.groupby(['month', 'month_num']).size().reset_index(name='nombre de livres')
 
 # Trier par ordre des mois de l'année
-books_per_month = books_per_month.sort_values(by='month_num')
+books_per_month = books_per_month.sort_values(by='month', ascending=False)
 
 # Créer un graphique à barres horizontal
 fig1 = px.bar(books_per_month,
@@ -69,7 +69,7 @@ fig1 = px.bar(books_per_month,
               y='month',
               orientation='h',
               title='Nombre de livres lus par mois',
-              labels={'nombre de livres': 'Nombre de livres', 'month': 'Mois'})
+              labels={'nombre de livres': 'Nombre de livres', 'month': 'Mois'},)
 
 
 
