@@ -1,5 +1,7 @@
 book_data_analysis
 
+![Inspiration Image](1.inspirations/Sans%20titre.png)
+
 # Python script
 "script_1_update" is the main script.
 Main steps : 
