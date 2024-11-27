@@ -17,22 +17,45 @@ st.set_page_config(
     initial_sidebar_state="collapsed", #expanded sidebar
 )
 
+df_book_updated = pd.read_parquet("../data_sources_from_python/df_book_updated.parquet")
+# df_book_streamlit = pd.read_parquet("df_book_streamlit.parquet")
+df_stat = pd.read_parquet("../data_sources_from_python/stats_lecture.parquet")
+# préparer df_book_updated pour le filtre : 
+df_book_updated['Date de lecture'] = pd.to_datetime(df_book_updated['Date de lecture'], format="%Y-%m-%dT%H:%M:%S.%fZ")
 
-df_book_updated = pd.read_parquet("df_book_updated.parquet")
-df_book_streamlit = pd.read_parquet("df_book_streamlit.parquet")
-df_stat = pd.read_parquet("stats_lecture.parquet")
+# title
+# dashboard title
+st.title("📚 Book data analysis")
+st.subheader("Logs analysis from KO e-reader")
+st.markdown("""This dashboard presents an analysis of e-book reading data.
+            The data comes from the reading logs of an e-reader using Ko-reader.
 
-# read parquet from a URL and keep it in cache, not working at the moment, #TODO check this issue later
-# @st.cache_data
-# def get_data1() -> pd.DataFrame:
-#     return pd.read_parquet(df_book_updated)
+            """)
+with st.sidebar: # sidebar
+    st.header("Chart parameters ⚙️")
+    annee = st.sidebar.multiselect('Year', ['2023', '2024'], default=['2024']) # filter by year
+    livre_termine = st.radio(    "reading status",    key="visibility",    options=["read", "unfinished", "read + unfinished"],)
 
-# df_book_updated = get_data1()
+
+    st.markdown("---")
+    st.markdown(
+            '<h6>Made in &nbsp<img src="https://streamlit.io/images/brand/streamlit-mark-color.png" alt="Streamlit logo" height="16">&nbsp by <a href="https://github.com/ChrisOlv">@chris</a></h6>',
+            unsafe_allow_html=True,
+        )
+
+df_book_updated = df_book_updated[df_book_updated['Date de lecture'].dt.year.astype(str).isin(annee)]
+if livre_termine == "read":
+    df_book_updated = df_book_updated[df_book_updated['% lu'] == 100]
+elif livre_termine == "unfinished":
+    df_book_updated = df_book_updated[df_book_updated['% lu'] != 100]
+else:
+    df_book_updated = df_book_updated
+
 
 # préparation des dataviz
 
 # 0 / nombre de libres par catégorie : 
-category_counts = df_book_streamlit['Catégorie'].value_counts().reset_index()
+category_counts = df_book_updated['Catégorie'].value_counts().reset_index()
 category_counts.columns = ['Catégorie', 'nombre de livre']
 
 # Créer un graphique à barres horizontal
@@ -42,8 +65,8 @@ fig0 = px.bar(category_counts_sorted,
              x='nombre de livre', 
              y='Catégorie',
              orientation='h',  # 'h' indique un bar chart horizontal
-             title='Nombre de livres par catégorie',
-             labels={'nombre de livre': 'Nombre de livres', 'Catégorie': 'Catégories'},
+             title='Number of books by category',
+             labels={'nombre de livre': 'Number of books', 'Catégorie': 'Category'},
              text_auto=True
              
              )
@@ -81,43 +104,49 @@ fig1 = px.bar(books_per_month,
               x='nombre de livres', 
               y='month',
               orientation='h',
-              title='Nombre de livres lus par mois',
-              labels={'nombre de livres': 'Nombre de livres', 'month': 'Mois'},
+              title='Number of books read per month',
+              labels={'nombre de livres': 'Nombre de livres', 'month': 'Month'},
+              text='nombre de livres',
               text_auto=True
 )
 
+
 fig1.update_traces(textposition="outside",
+                   textfont=dict(size=12),   # Réduire la taille de la police si nécessaire
+    cliponaxis=False,
                    textangle=0
                     
                 )
-fig1.update_layout(xaxis=dict(
+fig1.update_layout(
+    yaxis=dict(categoryorder="array", categoryarray=mois_ordres),  # S'assurer que les mois sont bien triés
+    xaxis=dict(
         showticklabels=False,  # Masquer les étiquettes de l'axe des x
         zeroline=False,        # Masquer la ligne zéro de l'axe des x
         showline=False,
-        title=''               # Masquer le nom de l'axe des x
-         # Masquer la ligne de l'axe des x
+        title=''),               # Masquer le nom de l'axe des x
+        bargap=0.1,  # Ajouter de l'espace entre les barres
     )
-)
+
 
 
 # 1/ PLUS LONGUE LECTURE
 # le temps de lecture max
-temps_maxi = df_book_streamlit[df_book_streamlit["temps passé sur le livre en heure"] == df_book_streamlit["temps passé sur le livre en heure"].max()]
+temps_maxi = df_book_updated[df_book_updated["temps passé sur le livre en heure"] == df_book_updated["temps passé sur le livre en heure"].max()]
 # prisme livre
-titre_max_temps_lecture = df_book_streamlit[df_book_streamlit["temps passé sur le livre en heure"] == df_book_streamlit["temps passé sur le livre en heure"].max()]["Titre"].values[0]
-auteur_max_temps_lecture = df_book_streamlit[df_book_streamlit["temps passé sur le livre en heure"] == df_book_streamlit["temps passé sur le livre en heure"].max()]["Auteurs"].values[0]
-temps_max_lecture = df_book_streamlit["temps passé sur le livre en heure"].max()
+titre_max_temps_lecture = df_book_updated[df_book_updated["temps passé sur le livre en heure"] == df_book_updated["temps passé sur le livre en heure"].max()]["Titre"].values[0]
+auteur_max_temps_lecture = df_book_updated[df_book_updated["temps passé sur le livre en heure"] == df_book_updated["temps passé sur le livre en heure"].max()]["Auteurs"].values[0]
+temps_max_lecture = df_book_updated["temps passé sur le livre en heure"].max()
 # print(f"Livre le plus long à lire : {titre_max_temps_lecture} de {auteur_max_temps_lecture} : {temps_max_lecture}")
 
 # # 2/ PLUS RÉGULIER
 # # Compter le nombre de lignes où "jours de lecture effectifs (jl)" est égal à "Durée lecture (j)"
-# count_regulier = df_book_streamlit[df_book_streamlit["jours de lecture effectifs (jl)"] == df_book_streamlit["Durée lecture (j)"]].shape[0]
+# count_regulier = df_book_updated[df_book_updated["jours de lecture effectifs (jl)"] == df_book_updated["Durée lecture (j)"]].shape[0]
 
 # # affiche le dernier, puis l'avant dernier, puis l'avant avant dernier
-# df_book_streamlit[df_book_streamlit["jours de lecture effectifs (jl)"] == df_book_streamlit["Durée lecture (j)"]].sort_values(by="Date de lecture", ascending
+# df_book_updated[df_book_updated["jours de lecture effectifs (jl)"] == df_book_updated["Durée lecture (j)"]].sort_values(by="Date de lecture", ascending
 # =False).head(3)[["Titre", "Durée lecture (j)", "jours de lecture effectifs (jl)", "Date de lecture"]]
 # # enregistre les 3 titres dans une liste
-# liste_livres = df_book_streamlit[df_book_streamlit["jours de lecture effectifs (jl)"] == df_book_streamlit["Durée lecture (j)"]].sort_values(by="Date de lecture", ascending   =False).head(3)["Titre"].values
+# liste_livres = df_book_updated[df_book_updated["jours de lecture effectifs (jl)"] == df_book_updated["Durée lecture (j)"]].sort_values(by="Date de lecture", ascending   =False).head(3)["Titre"].values
 
 # 3/ PLUS RAPIDE
 livre_rapide = df_book_updated[df_book_updated["temps passé sur le livre en minute"] > 35]
@@ -128,10 +157,10 @@ auteur_livre_rapide =livre_rapide[livre_rapide["pages lues à la minute"] == liv
 vitesse_livre_rapide =livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]["pages lues à la minute"].values[0].round(1)
 
 # 4/ PLUS ADDICTIF
-livre_addict = df_book_updated[df_book_updated["minutes_lecture_par_jour_de_lecture"] == df_book_updated["minutes_lecture_par_jour_de_lecture"].max()]
+livre_addict = df_book_updated[df_book_updated["minutes de lecture/jl"] == df_book_updated["minutes de lecture/jl"].max()]
 titre_livre_addict = livre_addict["Titre"].values[0]
 auteur_livre_addict = livre_addict["Auteurs"].values[0]
-minutes_livre_addict = livre_addict["minutes_lecture_par_jour_de_lecture"].values[0]
+minutes_livre_addict = livre_addict["minutes de lecture/jl"].values[0]
 
 # # 5/ JOURS AVEC LE PLUS DE LECTURE
 # # Convertir la colonne 'date lecture' en datetime
@@ -191,45 +220,20 @@ minutes_livre_addict = livre_addict["minutes_lecture_par_jour_de_lecture"].value
 
 # 8/ auteurs et livres : 
 # print le nombre de lignes de df_book_updated
-nb_livres_lus = df_book_streamlit.shape[0]
+nb_livres_lus = df_book_updated[df_book_updated['% lu'] == 100].shape[0]
+
+
+
 # print le nombre d'Auteurs lus de df_book_updated
-nb_auteurs_lus = df_book_streamlit["Auteurs"].nunique()
+
+nb_auteurs_lus = df_book_updated[df_book_updated['% lu'] == 100]["Auteurs"].nunique()
 
 # # page configuration
-
-# title
-# dashboard title
-st.title("📚 Book data analysis")
-st.subheader("Logs analysis from KO e-reader")
-st.markdown("""This dashboard presents an analysis of e-book reading data.
-            The data comes from the reading logs of an e-reader using Ko-reader.
-
-            """)
-with st.sidebar:
-    st.header("filters")
-    df_book_updated["end_date"] = pd.to_datetime(df_book_updated["end_date"], errors='coerce')
-    df_book_updated2 = df_book_updated.dropna(subset=["end_date"])
-    unique_years = pd.unique(df_book_updated2["end_date"].dt.year)
-    Annee_lecture = st.selectbox("Select a year", unique_years)
-
-    st.markdown("---")
-    st.markdown(
-            '<h6>Made in &nbsp<img src="https://streamlit.io/images/brand/streamlit-mark-color.png" alt="Streamlit logo" height="16">&nbsp by <a href="https://github.com/ChrisOlv">@chris</a></h6>',
-            unsafe_allow_html=True,
-        )
-
 
 
 # FILTERS
 
 ## filter by year
-
-
-
-
-
-## Apply filters
-df_book_updated = df_book_updated[df_book_updated["end_date"] == Annee_lecture]
 
 
 
@@ -242,55 +246,62 @@ chart1, chart2 = st.columns(2)
 
 # 1/ plus longue lecture 
 kpi1.metric(
-    label="# Plus longue lecture",
+    label="# Longest Reading",
     value=round(temps_max_lecture),
-    help=("heures")
+    help=("hours")
     )
 
 text1.markdown(titre_max_temps_lecture+" de "+auteur_max_temps_lecture)
 
 # 2/ plus rapide
 kpi2.metric(
-    label="# Plus rapide",
+    label="# Fastest Reading",
     value=vitesse_livre_rapide,
-    help=("pages lues à la minute")
+    help=("pages read per minute")
     )
 text2.markdown(titre_livre_rapide+" de "+auteur_livre_rapide)
 
 
 # 3/ plus addictif
 kpi3.metric(
-    label="# Plus addictif",
+    label="# Most Addictive Reading",
     value=round(minutes_livre_addict),
-    help=("minutes de lecture par jour")
+    help=("reading minutes per day")
     )
 text3.markdown(titre_livre_addict+" de "+auteur_livre_addict)
 
 #4/ auteurs et livres
 kpi4.metric(
-    label="# Livres lus",
+    label="# Books Read",
     value=nb_livres_lus
     )
-text4.markdown(f"de {nb_auteurs_lus} auteurs différents")
+text4.markdown(f"by {nb_auteurs_lus}  different authors")
 
 
-st.markdown("## Visualisation des données")
+st.markdown("## Book table")
 
 with chart1:
-    st.markdown("### Lecture par catégorie")
+    st.markdown("### Reading by Category")
     fig = fig0
     st.write(fig)
 
+# with chart2:
+#     st.markdown("### Lecture par mois")
+#     fig = fig1
+#     st.write(fig)
+
+
+# chart2 = st.container()
 with chart2:
-    st.markdown("### Lecture par mois")
-    fig = fig1
-    st.write(fig)
+    st.markdown("### Reading by Month")
+    st.plotly_chart(fig1) 
 # 5/ table
 
-df_print = df_book_streamlit[df_book_streamlit['% lu'] == 100]
-auteurs_a_exclure = ["Tamara Rosier", "Michael Joseph"]
+df_print = df_book_updated[df_book_updated['% lu'] == 100]
+auteurs_a_exclure = ["Tamara Rosier", "Michael Joseph"] 
+titres_a_exclure = ["ERROR: Error reading EPUB format"]
 df_print = df_print[~df_print['Auteurs'].isin(auteurs_a_exclure)]
-
+df_print = df_print[~df_print['Titre'].isin(titres_a_exclure)]
 
 st.markdown("Books read during the year :")
 st.dataframe(
@@ -298,3 +309,10 @@ st.dataframe(
              hide_index=True,
              height=500,
              )
+
+
+# pour faire un print : 
+text0 = st.empty()
+aa = df_print.shape[0]
+text0.markdown(str(aa))
+# ou text0.markdown(aa)

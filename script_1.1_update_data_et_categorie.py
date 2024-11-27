@@ -5,6 +5,8 @@
 import time
 # Start the timer
 start_time = time.time()
+import warnings
+from datetime import timedelta
 
 import subprocess
 import sys
@@ -281,7 +283,7 @@ print("="*80)
 
 # Exporter la tables vers un fichier Parquet
 df_updated.to_parquet('data_sources_from_python/df_book.parquet',engine='pyarrow')
-
+df_book = df_updated
 
 
 
@@ -331,7 +333,7 @@ df_page_stat_data['date de fin de lecture'] = df_page_stat_data.groupby('id_book
 
 # Exporter la tables vers un fichier Parquet
 df_page_stat_data.to_parquet('data_sources_from_python/stats_lecture.parquet', engine='pyarrow')
-
+df_stat = df_page_stat_data
 
 
 # Afficher les premières lignes du DataFrame
@@ -340,15 +342,143 @@ print(df_page_stat_data.tail(2))
 print("récupération des stats lecture terminée")
 print("="*80)
 
+print("="*80)
+print("Préparation df pour dataviz en cours")
+
+# creation d'un df df_book_updated
+# Ignorer les avertissements
+warnings.filterwarnings('ignore')
+
+# Assurez-vous que la colonne "date lecture" est bien de type datetime
+df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture'])
+
+# Grouper df_stat par 'id_book' et calculer les valeurs souhaitées
+df_stat_grouped = df_stat.groupby('id_book').agg({
+    'Temps passé sur la page en seconde': 'sum',
+    'date lecture': ['nunique', 'min', 'max']
+}).reset_index()
+
+# Aplatir les colonnes multi-niveaux résultantes après l'aggrégation
+df_stat_grouped.columns = ['id', 'total_temps_sur_page_seconde', 'nb_dates_lecture_distinctes', 'start_date', 'end_date']
+
+# Calculer la durée de l'intervalle de lecture
+df_stat_grouped['intervalle_lecture_en_jour'] = 1 +(df_stat_grouped['end_date'] - df_stat_grouped['start_date']).dt.days
+
+# Fusionner les résultats avec df_book
+df_book_updated = df_book.merge(df_stat_grouped, how='left', on='id')
+
+# Remplacer les valeurs NaN pour les colonnes nouvellement calculées, si nécessaire
+df_book_updated['total_temps_sur_page_seconde'].fillna(0, inplace=True)
+df_book_updated['nb_dates_lecture_distinctes'].fillna(0, inplace=True)
+df_book_updated['intervalle_lecture_en_jour'].fillna(0, inplace=True)
+
+# nombre de page lue par jour de lecture (total Nbr de pages lues / nb_dates_lecture_distinctes), arrondi à 2 chiffres après la virgule
+
+df_book_updated['nb_pages_lues_par_jour_de_lecture'] = (df_book_updated['total Nbr de pages lues'] / df_book_updated['nb_dates_lecture_distinctes']).round(1)
+
+# heure de lecure par jour de lecture
+df_book_updated['heure_lecture_par_jour_de_lecture'] = (df_book_updated['total_temps_sur_page_seconde'] / df_book_updated['nb_dates_lecture_distinctes'] / 3600).round(2)
+df_book_updated['minutes_lecture_par_jour_de_lecture'] = (df_book_updated['total_temps_sur_page_seconde'] / df_book_updated['nb_dates_lecture_distinctes'] / 60).round(1)
+
+# Remplacer les valeurs NaN dans la colonne 'heure_lecture_par_jour_de_lecture' par 0
+df_book_updated['heure_lecture_par_jour_de_lecture'].fillna(0, inplace=True)
+
+# Convertir les heures de lecture en durée formatée (HH:MM:SS)
+df_book_updated['temps_lecture_par_jour_de_lecture_formatee(hh:mm:ss)'] = df_book_updated['heure_lecture_par_jour_de_lecture'].apply(
+    lambda x: str(timedelta(hours=x))
+)
+
+# passer temps_lecture_par_jour_de_lecture_formatee en hh:mm
+df_book_updated['temps_lecture_par_jour_de_lecture_formatee(hh:mm:ss)'] = df_book_updated['temps_lecture_par_jour_de_lecture_formatee(hh:mm:ss)'].str[:4]
+
+df_book_updated["total_temps_de_lecture_(hh:mm:ss)"] = df_book_updated["total_temps_sur_page_seconde"].apply(
+    lambda x: str(timedelta(seconds=x))
+)
+
+# drop les lignes ou "nb_dates_lecture_distinctes" est égale à 0
+df_book_updated = df_book_updated[df_book_updated['nb_dates_lecture_distinctes'] != 0]
+
+# order by "Date dernière ouverture"
+df_book_updated = df_book_updated.sort_values(by='Date dernière ouverture', ascending=False)
+
+# ajoute une colonne "pourcent_lu" : "total Nbr de pages lues du livre" / "page"
+df_book_updated['pourcent_lu'] = (df_book_updated['total Nbr de pages lues'] / df_book_updated['page'] * 100).round(0)
+
+df_book_updated["temps passé sur le livre en minute"] = (df_book_updated["total_temps_sur_page_seconde"] / 60).round(2)
+df_book_updated["temps passé sur le livre en heure"] = (df_book_updated["total_temps_sur_page_seconde"] / 3600).round(2)
 
 
+# diviser la colonne série en 2 : série et numéro de série, en utilisant "#" comme séparateur
+df_book_updated[['série', 'numéro_série']] = df_book_updated['Série'].str.split('#', expand=True)
+
+# changer le format de start_date et end_date en yyyy-mm-dd
+df_book_updated['start_date'] = df_book_updated['start_date'].dt.strftime('%Y-%m-%d')
+df_book_updated['end_date'] = df_book_updated['end_date'].dt.strftime('%Y-%m-%d')
+
+# pourcent lu en pourcentage avec 0 chiffre après la virgule
+df_book_updated['pourcent_lu'] = df_book_updated['pourcent_lu'].astype(int)
+df_book_updated['intervalle_lecture_en_jour'] = df_book_updated['intervalle_lecture_en_jour'].astype(int)
+df_book_updated['nb_dates_lecture_distinctes'] = df_book_updated['nb_dates_lecture_distinctes'].astype(int)
+
+# si pourcent_lu est supérieur à 92, le mettre à 100
+df_book_updated.loc[df_book_updated['pourcent_lu'] > 85, 'pourcent_lu'] = 100
+
+# drop colonnes
+df_book_updated.drop(columns=[
+    'total_read_time', 
+    'id long',
+    "notes",
+    "Série",
+    "format"
+    ], inplace=True)
+
+df_book_updated["pages lues à la minute"] = df_book_updated["total Nbr de pages lues"] / df_book_updated["temps passé sur le livre en minute"]
+
+    
+# Réorganiser les colonnes
+# ATTENTION, si les colonnes ne sont pas dans cette liste, elle ne seront pas exportées !!!
+ordered_columns = [
+        'id', 'Titre', 'Auteurs', 'Auteurs courts', 'Langue', 'categorie', 'série', 'numéro_série',
+        'page', 'total Nbr de pages lues', 'pages lues à la minute',
+        'pourcent_lu', 'start_date', 'end_date', 'intervalle_lecture_en_jour',
+        'nb_dates_lecture_distinctes', 'nb_pages_lues_par_jour_de_lecture',
+        'total_temps_sur_page_seconde', 'temps passé sur le livre en minute',
+        'temps passé sur le livre en heure', 'heure_lecture_par_jour_de_lecture',
+        'minutes_lecture_par_jour_de_lecture', 'temps_lecture_par_jour_de_lecture_formatee(hh:mm:ss)',
+        'total_temps_de_lecture_(hh:mm:ss)',"First published date","Date dernière ouverture"]
+df_book_updated = df_book_updated[ordered_columns]
+
+df_book_updated.rename(columns={
+    # 'Auteurs courts': 'Auteurs',
+    # "série":"Série",
+    "categorie":"Catégorie",
+    # "numéro_série":"#",
+    "First published date":"Année publication",
+    "Date dernière ouverture":"Date de lecture",
+    "page":"# pages",
+    "total Nbr de pages lues":"# pages lues",
+    "pourcent_lu":"% lu",
+    # "start_date":"Commencé",
+    # "end_date":"Terminé",
+    "intervalle_lecture_en_jour":"Durée lecture (j)",
+    "nb_dates_lecture_distinctes":"jours de lecture effectifs (jl)",
+    "nb_pages_lues_par_jour_de_lecture":"# pages lues/jl",	
+    # "total_temps_de_lecture_(hh:mm:ss)": "Temps de lecture total (hh:mm:ss)",
+    "minutes_lecture_par_jour_de_lecture":"minutes de lecture/jl",
+    # "temps_lecture_par_jour_de_lecture_formatee(hh:mm:ss)": "Temps de lecture h:m/jl",
+    # "Temps de lecture total (hh:mm:ss)": "Temps de lecture total",
+    "total_temps_sur_page_seconde":"temps passé sur le livre en seconde",
+
+    }, inplace=True)
 
 
-
-
+# output des tables dans le dossier sources python
+df_book_updated.to_parquet('data_sources_from_python/df_book_updated.parquet', engine='pyarrow', index=False)
+df_book_updated.to_excel('data_sources_from_python/df_book_updated.xlsx', index=False)
+print("Préparation df pour dataviz terminée")
+print("="*80)
 print("="*80)
 print("archivage fichier sqlite en cours")
-
 
 
 
