@@ -9,40 +9,53 @@ import matplotlib.dates as mdates
 from datetime import timedelta
 
 
+
 st.set_page_config(
     page_title="book log analysis",
     page_icon="📖",
     layout="wide", #wide-screen layout
+    initial_sidebar_state="collapsed", #expanded sidebar
 )
-
 
 
 df_book_updated = pd.read_parquet("df_book_updated.parquet")
 df_book_streamlit = pd.read_parquet("df_book_streamlit.parquet")
 df_stat = pd.read_parquet("stats_lecture.parquet")
 
-# read parquet from a URL and keep it in cache
+# read parquet from a URL and keep it in cache, not working at the moment, #TODO check this issue later
 # @st.cache_data
 # def get_data1() -> pd.DataFrame:
 #     return pd.read_parquet(df_book_updated)
 
 # df_book_updated = get_data1()
 
-# préparation des dataviz : 
+# préparation des dataviz
+
 # 0 / nombre de libres par catégorie : 
 category_counts = df_book_streamlit['Catégorie'].value_counts().reset_index()
 category_counts.columns = ['Catégorie', 'nombre de livre']
 
 # Créer un graphique à barres horizontal
-category_counts_sorted = category_counts.sort_values(by='nombre de livre', ascending=False)
+category_counts_sorted = category_counts.sort_values(by='nombre de livre', ascending=True)
 
 fig0 = px.bar(category_counts_sorted,
              x='nombre de livre', 
              y='Catégorie',
              orientation='h',  # 'h' indique un bar chart horizontal
              title='Nombre de livres par catégorie',
-             labels={'nombre de livre': 'Nombre de livres', 'Catégorie': 'Catégories'})
-
+             labels={'nombre de livre': 'Nombre de livres', 'Catégorie': 'Catégories'},
+             text_auto=True
+             
+             )
+fig0.update_traces(textposition="outside")
+fig0.update_layout(xaxis=dict(
+        showticklabels=False,  # Masquer les étiquettes de l'axe des x
+        zeroline=False,        # Masquer la ligne zéro de l'axe des x
+        showline=False,
+        title=''               # Masquer le nom de l'axe des x
+         # Masquer la ligne de l'axe des x
+    )
+)
 # Afficher le graphique
 # graph = fig0.show()
 
@@ -61,7 +74,7 @@ df_book_updated['month'] = pd.Categorical(df_book_updated['month'], categories=m
 books_per_month = df_book_updated.groupby(['month', 'month_num']).size().reset_index(name='nombre de livres')
 
 # Trier par ordre des mois de l'année
-books_per_month = books_per_month.sort_values(by='month_num')
+books_per_month = books_per_month.sort_values(by='month_num',ascending=True)
 
 # Créer un graphique à barres horizontal
 fig1 = px.bar(books_per_month,
@@ -69,9 +82,22 @@ fig1 = px.bar(books_per_month,
               y='month',
               orientation='h',
               title='Nombre de livres lus par mois',
-              labels={'nombre de livres': 'Nombre de livres', 'month': 'Mois'})
+              labels={'nombre de livres': 'Nombre de livres', 'month': 'Mois'},
+              text_auto=True
+)
 
-
+fig1.update_traces(textposition="outside",
+                   textangle=0
+                    
+                )
+fig1.update_layout(xaxis=dict(
+        showticklabels=False,  # Masquer les étiquettes de l'axe des x
+        zeroline=False,        # Masquer la ligne zéro de l'axe des x
+        showline=False,
+        title=''               # Masquer le nom de l'axe des x
+         # Masquer la ligne de l'axe des x
+    )
+)
 
 
 # 1/ PLUS LONGUE LECTURE
