@@ -23,8 +23,6 @@ import shutil
 from datetime import datetime
 
 
-
-### NEW CODE
 # df_book_stale est la table originale et df_book_new est la table mise à jour
 
 print("="*80)
@@ -36,9 +34,13 @@ print("="*80)
 print("chargement du fichier sqlite en cours")
 
 
+
 # Chemin vers SQLite, depuis le répertoire "update"
 database_path = "sqlite/update/statistics.sqlite3"
-
+# si database_path n'existe pas, on arrete le script
+if not os.path.exists(database_path):
+    print(f"file {database_path} does not exist. To install or update your db, paste your statistics.sqlite3 file from your reader to sqlite/update/")
+    sys.exit(1)
 
 # Connexion à la base de données SQLite
 conn = sqlite3.connect(database_path)
@@ -47,7 +49,7 @@ conn = sqlite3.connect(database_path)
 query = "SELECT name FROM sqlite_master WHERE type='table';"
 tables = pd.read_sql(query, conn)
 
-# Charger une table de la base de données dans un df pandas
+# Charger les tables de la base de données dans des df pandas
 book = 'book'
 df_book_new = pd.read_sql(f"SELECT * FROM {book};", conn)
 page_stat_data = "page_stat_data"
@@ -61,7 +63,7 @@ print("Nombre de lignes de df_page_stat_data : ", df_page_stat_data.shape[0])
 conn.close()
 
 # enrichissement du fichier source
-df_book_new['oeuvre'] = df_book_new[['title', 'authors']].astype(str).agg(' - '.join, axis=1)
+df_book_new['oeuvre'] = df_book_new[['title', 'authors']].astype(str).agg(' - '.join, axis=1) # sera utilisé pour la génération de catégorie et d'année de publication
 df_book_new['id long'] = df_book_new['id'].apply(lambda x: str(x).zfill(5))
 # renaming des colonnes
 df_book_new = df_book_new.rename(
@@ -85,7 +87,7 @@ df_book_new['Auteurs courts'] = (
 
 # ajout  colonne "format" = "ebook"
 df_book_new['format'] = "ebook"
-# ajout d'une colonne categorie vide 
+# ajout d'une colonne categorie vide et first published date
 df_book_new['First published date'] = ''
 df_book_new['categorie'] = ''
 df_book_new = df_book_new.drop(columns=['highlights', 'md5'])
@@ -97,13 +99,14 @@ print("="*80)
 
 # check si le fichier "data_sources_from_python/df_book.parquet" existe
 # si oui, le charger dans df_book_stale
+# sinon on en créé un nouveau.
+# permet de ne pas générer toutes les catégories et année de release à chaque fois
 print("="*80)
 print("chargement de la liste des livres existante en cours")
 
 if os.path.exists("data_sources_from_python/df_book.parquet"):
     df_book_stale = pd.read_parquet("data_sources_from_python/df_book.parquet")
-    # df_book_stale['oeuvre'] = df_book_stale[['Titre', 'Auteurs']].astype(str).agg(' - '.join, axis=1)
-    # check si la colonne "First published date"    existe, sinon la créer
+    # check si la colonne "First published date" existe, sinon la créer
     if 'First published date' not in df_book_stale.columns:
         df_book_stale['First published date'] = ''
 
@@ -144,6 +147,7 @@ print("chargement de la liste des livres terminée")
 print("="*80)
 
 # GEN AI AJOUT DE LA CATEGORY : 
+# on demande à un agent utilisant gpt4o de générer une catégorie pour chaque livre
 print("="*80)
 print("génération des catégories avec gpt4o en cours ")
 # load env

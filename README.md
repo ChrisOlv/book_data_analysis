@@ -7,50 +7,25 @@ book_data_analysis
 Main steps : 
 1. get info from the sqlite db
 2. prepare and clean data
-3. generate categories / sub categories from gpt4o llm
-4. generate 2 parquet files : books and logs
+3. generate categories / sub categories, year of release from gpt4o llm
+4. generate 3 parquet files into data_source_from_python : df_books, stats_lectures, df_book_updated 
 
-# Power BI dashboard
-The report connect to the 2 parquets files + the excel "paper books" (#TODO : rename et format this file)
-## power query parameters :
-absolute path : define the path of the local repo on your machine. Change it when your change your machine
 
 # tuto
 
-## tuto first instal
-
-## tuto update data :
+## tuto install or update data :
 1. paste the statistics.sqlite3 file from your KO e-reader into the folder "sqlite/update"
-2. execute the script
+2. execute the script (it handle the first install and the update, with incremental update).
 
+## vizualize data : 
+streamlit run app2.py
+enjoy
 
-
-
-
-#### duplicates book
-Ereader oftentimes create duplicate when you mess with calibre.
-To regroup books I use this method : 
-DEPRECATED.
-#TODO : book cleaned once directly in the sql db
-
-
-
-### Update : 
-overwrite the statistic.sqlite3 file from your e-reader.
-you can add paper book using the xls files (experimental)
-
-### Utilisation 
-
-## Sujets en cours de dev
-Check out the github repo to get the backlog and inprogress tasks
-
-
-
-
-# OLD
+# OLD stuff
 The following items are no longer needed. They are kept here for history.
 
 ## Power BI : 
+no longer used
 ### installation
 #### path
 relative path (book.xls & sqlite3) : the relative location of the local sources. Don't touch this. --> Technically, there is no need of these parameters, we can directly type the relative path in the query source.
