@@ -347,12 +347,14 @@ st.dataframe(
              height=500,
              )
 
+# # pour faire un print : 
+# text0 = st.empty()
+# aa = df_print.shape[0]
+# text0.markdown(str(aa))
+# # ou text0.markdown(aa)
 
-# pour faire un print : 
-text0 = st.empty()
-aa = df_print.shape[0]
-text0.markdown(str(aa))
-# ou text0.markdown(aa)
+# V1
+
 
 # heatmap 
 import calmap
@@ -371,7 +373,6 @@ annee = int(filter_annee[0])
 
 
 # st.pyplot(figure)
-
 def create_calmap(df_serie):
     plt.figure(figsize=(16, 10))
     calmap.yearplot(
@@ -381,10 +382,59 @@ def create_calmap(df_serie):
         cmap='YlGn',
         linewidth=2,
         daylabels=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],  # Correction pour daylabels
-        dayticks=[0, 1, 2, 3, 4, 5, 6],
+        dayticks=[0, 1, 2, 3, 4, 5, 6], monthly_border=False,
     )
-    plt.title('Temps de lecture en minutes sur l\'année')
+
+    
+    
+    plt.title('Year of reading')
+    # plt.text("test")
     st.pyplot(plt)
 
 # Afficher le plot dans Streamlit
 create_calmap(df_serie)
+
+
+
+
+# v 2
+
+import calplot  # Import Calplot au lieu de Calmap
+
+# Préparer les données
+df_stat = df_stat.copy()  # Fait une copie pour éviter d'éventuelles modifications inutiles
+df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture'])
+df_aggregated = df_stat.groupby('date lecture')['Temps de lecture en minute'].sum().reset_index()
+df_serie = df_aggregated.set_index('date lecture')['Temps de lecture en minute']
+
+# Remplir les dates manquantes avec 0
+df_serie = df_serie.asfreq('D', fill_value=0)
+
+# Filtrer l'année
+annee = int(filter_annee[0])
+
+# Fonction pour créer le CalMap avec Calplot
+def create_calmap(df_serie, year):
+    # Filtrer les données pour l'année en question
+    df_year = df_serie[df_serie.index.year == year]
+
+    # Création du plot
+    fig, ax = calplot.calplot(
+        df_year,
+        cmap='YlGn',
+        figsize=(10, 10),
+        colorbar=False,
+        suptitle='Temps de lecture en minutes sur l\'année',
+        linewidth=0.5,
+        linecolor='white',
+        daylabels=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+        dayticks=[0, 1, 2, 3, 4, 5, 6]
+    )
+    # plt.legend(ncol=2)
+
+
+    # Afficher le plot dans Streamlit
+    st.pyplot(fig)
+
+# Afficher le plot dans Streamlit
+create_calmap(df_serie, annee)
