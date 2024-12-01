@@ -397,44 +397,50 @@ create_calmap(df_serie)
 
 
 
-# v 2
+# # v 2
+## plus de paramètres, mais c'est pas encore ça
+# import calplot  # Import Calplot au lieu de Calmap
 
-import calplot  # Import Calplot au lieu de Calmap
+# # Préparer les données
+# df_stat = df_stat.copy()  # Fait une copie pour éviter d'éventuelles modifications inutiles
+# df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture'])
+# df_aggregated = df_stat.groupby('date lecture')['Temps de lecture en minute'].sum().reset_index()
+# df_serie = df_aggregated.set_index('date lecture')['Temps de lecture en minute']
 
-# Préparer les données
-df_stat = df_stat.copy()  # Fait une copie pour éviter d'éventuelles modifications inutiles
-df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture'])
-df_aggregated = df_stat.groupby('date lecture')['Temps de lecture en minute'].sum().reset_index()
-df_serie = df_aggregated.set_index('date lecture')['Temps de lecture en minute']
+# # Remplir les dates manquantes avec 0
+# df_serie = df_serie.asfreq('D', fill_value=0)
 
-# Remplir les dates manquantes avec 0
-df_serie = df_serie.asfreq('D', fill_value=0)
+# # Filtrer l'année
+# annee = int(filter_annee[0])
 
-# Filtrer l'année
-annee = int(filter_annee[0])
+# # Fonction pour créer le CalMap avec Calplot
+# def create_calmap(df_serie, year):
+#     # Filtrer les données pour l'année en question
+#     df_year = df_serie[df_serie.index.year == year]
 
-# Fonction pour créer le CalMap avec Calplot
-def create_calmap(df_serie, year):
-    # Filtrer les données pour l'année en question
-    df_year = df_serie[df_serie.index.year == year]
+#     # Création du plot
+#     fig, ax = calplot.calplot(
+#         df_year,
 
-    # Création du plot
-    fig, ax = calplot.calplot(
-        df_year,
-        cmap='YlGn',
-        figsize=(10, 10),
-        colorbar=False,
-        suptitle='Temps de lecture en minutes sur l\'année',
-        linewidth=0.5,
-        linecolor='white',
-        daylabels=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-        dayticks=[0, 1, 2, 3, 4, 5, 6]
-    )
-    # plt.legend(ncol=2)
+#         cmap='YlGn',
+#         figsize=(10, 10),
+#         colorbar=False,
+#         suptitle='Year of reading',
+#         linewidth=0.5,
+#         linecolor='white',
+#         daylabels=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+#         dayticks=[0, 1, 2, 3, 4, 5, 6],
+#     )
+#     fig.tight_layout(pad=-45)
+#     # fig.subplots_adjust(top=0.9, bottom=0.15, left=0.1, right=0.9)
 
+#     # sm = plt.cm.ScalarMappable(cmap='YlGn', norm=plt.Normalize(vmin=df_year.min(), vmax=df_year.max()))
+#     # sm.set_array([])
+#     # cbar = fig.colorbar(sm, ax=ax, orientation='horizontal', pad=0.05)
+#     # cbar.set_label("Temps de lecture (minutes)", fontsize=8)  # Ajuster la taille du label
+#     # cbar.ax.tick_params(labelsize=6)  # Réduire la taille des ticks
+#     # Afficher le plot dans Streamlit
+#     st.pyplot(fig)
 
-    # Afficher le plot dans Streamlit
-    st.pyplot(fig)
-
-# Afficher le plot dans Streamlit
-create_calmap(df_serie, annee)
+# # Afficher le plot dans Streamlit
+# create_calmap(df_serie, annee)
