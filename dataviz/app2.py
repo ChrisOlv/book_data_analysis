@@ -17,6 +17,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed", #expanded sidebar
 )
 
+uploaded_file = st.file_uploader("Upload your SQLite3 file", type=["sqlite3", "db"], key="summary_file_uploader")
+
 df_book_updated = pd.read_parquet("../data_sources_from_python/df_book_updated.parquet")
 # df_book_streamlit = pd.read_parquet("df_book_streamlit.parquet")
 df_stat = pd.read_parquet("../data_sources_from_python/stats_lecture.parquet")
