@@ -33,8 +33,12 @@ st.markdown("""This dashboard presents an analysis of e-book reading data.
             """)
 with st.sidebar: # sidebar
     st.header("Chart parameters ⚙️")
-    annee = st.sidebar.multiselect('Year', ['2023', '2024'], default=['2024']) # filter by year
+    filter_annee = st.sidebar.multiselect('Year', ['2023', '2024'], default=['2024']) # filter by year
     livre_termine = st.radio(    "reading status",    key="visibility",    options=["read", "unfinished", "read + unfinished"],)
+    filter_auteur = st.sidebar.multiselect('Author', df_book_updated['Auteurs'].unique())
+    filter_title = st.sidebar.multiselect('Title', df_book_updated['Titre'].unique())
+    filter_category1 = st.sidebar.multiselect('Category', df_book_updated['category1'].unique())
+    filter_category2 = st.sidebar.multiselect('Subcategory', df_book_updated['category2'].unique())
 
 
     st.markdown("---")
@@ -42,8 +46,16 @@ with st.sidebar: # sidebar
             '<h6>Made in &nbsp<img src="https://streamlit.io/images/brand/streamlit-mark-color.png" alt="Streamlit logo" height="16">&nbsp by <a href="https://github.com/ChrisOlv">@chris</a></h6>',
             unsafe_allow_html=True,
         )
+    
 
-df_book_updated = df_book_updated[df_book_updated['Date de lecture'].dt.year.astype(str).isin(annee)]
+# on applique les filtres ici : 
+# filtre année :
+if filter_annee == []:
+    df_book_updated = df_book_updated
+else:
+    df_book_updated = df_book_updated[df_book_updated['Date de lecture'].dt.year.astype(str).isin(filter_annee)]
+
+# filtre livre terminé ou non
 if livre_termine == "read":
     df_book_updated = df_book_updated[df_book_updated['% lu'] == 100]
 elif livre_termine == "unfinished":
@@ -51,6 +63,28 @@ elif livre_termine == "unfinished":
 else:
     df_book_updated = df_book_updated
 
+# filtre auteur : 
+if filter_auteur == []:
+    df_book_updated = df_book_updated
+else:
+    df_book_updated = df_book_updated[df_book_updated['Auteurs'].isin(filter_auteur)]
+
+# filtre title : 
+if filter_title == []:
+    df_book_updated = df_book_updated
+else:
+    df_book_updated = df_book_updated[df_book_updated['Titre'].isin(filter_title)]
+
+# filtre category1 :
+if filter_category1 == []:
+    df_book_updated = df_book_updated
+else:
+    df_book_updated = df_book_updated[df_book_updated['category1'].isin(filter_category1)]
+# filtre category2 :
+if filter_category2 == []:
+    df_book_updated = df_book_updated
+else:
+    df_book_updated = df_book_updated[df_book_updated['category2'].isin(filter_category2)]
 
 # préparation des dataviz
 
@@ -167,17 +201,17 @@ minutes_livre_addict = livre_addict["minutes de lecture/jl"].values[0]
 # df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture'], format='%Y-%m-%d')
 
 # # Joindre df_stat avec df_book_updated pour inclure le nom des livres
-# df_stat2 = df_stat.merge(df_book_updated, left_on='id_book', right_on='id', how='left')
+# df_stat = df_stat.merge(df_book_updated, left_on='id_book', right_on='id', how='left')
 
 # # Agréger les données par 'date lecture'
-# agg_data = df_stat2.groupby('date lecture').agg({
+# agg_data = df_stat.groupby('date lecture').agg({
 #     'Temps de lecture en minute': 'sum',
 #     'page': 'nunique',
 #     'id_book': 'nunique'
 # }).reset_index()
 
 # # Ajouter la liste des id_book et des titres pour chaque date de lecture
-# book_ids_titles_by_date = df_stat2.groupby('date lecture').apply(
+# book_ids_titles_by_date = df_stat.groupby('date lecture').apply(
 #     lambda x: ', '.join(sorted(set(f"{row['id_book']} ({row['Titre']})" for _, row in x.iterrows())))
 # ).reset_index()
 
@@ -194,7 +228,7 @@ minutes_livre_addict = livre_addict["minutes de lecture/jl"].values[0]
 # def concatenate_unique_values(series):
 #     return ', '.join(sorted(set(map(str, series))))
 
-# books_info = df_stat2.groupby(['date lecture', 'Heure']).apply(
+# books_info = df_stat.groupby(['date lecture', 'Heure']).apply(
 #     lambda x: pd.Series({
 #         'id_books': concatenate_unique_values(x['id_book']),
 #         'Titres': concatenate_unique_values(x['Titre'])
@@ -243,6 +277,7 @@ kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 text1, text2, text3, text4 = st.columns(4)
 table = st.columns(1)
 chart1, chart2 = st.columns(2)
+chart3 = st.columns(1)
 
 # 1/ plus longue lecture 
 kpi1.metric(
@@ -297,15 +332,17 @@ with chart2:
     st.plotly_chart(fig1) 
 # 5/ table
 
-df_print = df_book_updated[df_book_updated['% lu'] == 100]
+# df_print = df_book_updated[df_book_updated['% lu'] == 100]
 auteurs_a_exclure = ["Tamara Rosier", "Michael Joseph"] 
 titres_a_exclure = ["ERROR: Error reading EPUB format"]
-df_print = df_print[~df_print['Auteurs'].isin(auteurs_a_exclure)]
+df_print = df_book_updated[~df_book_updated['Auteurs'].isin(auteurs_a_exclure)]
 df_print = df_print[~df_print['Titre'].isin(titres_a_exclure)]
+# changer la caolonne date lecture en YYYY-MM-DD
+df_print['Date de lecture'] = df_print['Date de lecture'].dt.strftime('%Y-%m-%d')
 
 st.markdown("Books read during the year :")
 st.dataframe(
-    df_print[["Titre","Auteurs","Catégorie","Date de lecture","Année publication", "# pages lues","pages lues à la minute","Durée lecture (j)", "jours de lecture effectifs (jl)", "# pages lues/jl","temps passé sur le livre en heure","minutes de lecture/jl" ]],
+    df_print[["Titre","Auteurs","Catégorie","Date de lecture","Year rel", "# pages lues","pages lues à la minute","Durée lecture (j)", "jours de lecture effectifs (jl)", "# pages lues/jl","temps passé sur le livre en heure","minutes de lecture/jl" ]],
              hide_index=True,
              height=500,
              )
@@ -316,3 +353,38 @@ text0 = st.empty()
 aa = df_print.shape[0]
 text0.markdown(str(aa))
 # ou text0.markdown(aa)
+
+# heatmap 
+import calmap
+import matplotlib.pyplot as plt
+# passer df_stat['date lecture'] en dt time
+df_stat = df_stat
+df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture'])
+df_aggregated = df_stat.groupby('date lecture')['Temps de lecture en minute'].sum().reset_index()
+df_serie = df_aggregated.set_index('date lecture')['Temps de lecture en minute']
+
+# Remplir les dates manquantes avec 0
+df_serie = df_serie.asfreq('D', fill_value=0)
+
+# filter_annee est au format ['2024'], on veut 2024
+annee = int(filter_annee[0])
+
+
+# st.pyplot(figure)
+
+def create_calmap(df_serie):
+    plt.figure(figsize=(16, 10))
+    calmap.yearplot(
+        df_serie,
+        year=annee,
+        fillcolor='lightgrey',
+        cmap='YlGn',
+        linewidth=2,
+        daylabels=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],  # Correction pour daylabels
+        dayticks=[0, 1, 2, 3, 4, 5, 6],
+    )
+    plt.title('Temps de lecture en minutes sur l\'année')
+    st.pyplot(plt)
+
+# Afficher le plot dans Streamlit
+create_calmap(df_serie)

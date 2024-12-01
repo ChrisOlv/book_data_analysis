@@ -1,7 +1,3 @@
-# version 1.1 pour ajouter la mise à jour incrémentale
-# mise à jour incrémentale prête dans le notebook "analys_temporelle.ipynb", à partir de la cellule ### book_table
-# y'a plus qu'à !
-
 import time
 # Start the timer
 start_time = time.time()
@@ -317,6 +313,9 @@ df_page_stat_data.rename(columns={"duration":"Temps passé sur la page en second
 # convertir la colonne en date time
 df_page_stat_data.rename(columns={"start_time":"heure de début"},inplace=True)
 
+
+
+
 df_page_stat_data['heure de début'] = pd.to_datetime(df_page_stat_data['heure de début'], unit='s')
 # créé une colonne "id long" qui reprend la colonne "id_book" en la passant sur 5 chiffres. Les premiers chiffres doivent etre des "0". par exemple "68" devient "00068"
 df_page_stat_data['id_long'] = df_page_stat_data['id_book'].apply(lambda x: str(x).zfill(5))
@@ -325,6 +324,11 @@ df_page_stat_data['Temps de lecture en minute'] = df_page_stat_data['Temps pass�
 df_page_stat_data['Temps de lecture en heure'] = df_page_stat_data['Temps de lecture en minute'] / 60
 # ajoute une colonne "date lecture" qui reprend la date de la colonne "heure de début"
 df_page_stat_data['date lecture'] = df_page_stat_data['heure de début'].dt.date
+
+
+# supprimer les lignes où date lecture est égale à 2012-05-01 (erreur ereader qui a reset son horloge)
+df_page_stat_data = df_page_stat_data[df_page_stat_data['date lecture'] != pd.to_datetime('2012-05-01').date()]
+
 # ajoute une colonne "Heure de début de lecture" qui reprend l'heure de la colonne "heure de début" 
 df_page_stat_data['Heure de début de lecture'] = df_page_stat_data['heure de début'].dt.time
 # ajoute les colonnes : Heure,	Heure en décimal, Jour Précédent. basée sur la colonne heure de début 
@@ -334,6 +338,7 @@ df_page_stat_data['Jour Précédent'] = (df_page_stat_data['heure de début'] - 
 # ajoute une colonne "Est Consécutif" 
 df_page_stat_data['Est Consécutif'] = (df_page_stat_data['date lecture'].shift(1) == df_page_stat_data['date lecture']) | (df_page_stat_data['date lecture'].shift(1) == df_page_stat_data['date lecture'] - pd.Timedelta(days=1))
 df_page_stat_data['date de fin de lecture'] = df_page_stat_data.groupby('id_book')['date lecture'].transform('max')
+
 
 # Exporter la tables vers un fichier Parquet
 df_page_stat_data.to_parquet('data_sources_from_python/stats_lecture.parquet', engine='pyarrow')
@@ -353,8 +358,9 @@ print("Préparation df pour dataviz en cours")
 # Ignorer les avertissements
 warnings.filterwarnings('ignore')
 
+
 # Assurez-vous que la colonne "date lecture" est bien de type datetime
-df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture'])
+df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture']) 
 
 # Grouper df_stat par 'id_book' et calculer les valeurs souhaitées
 df_stat_grouped = df_stat.groupby('id_book').agg({
@@ -416,8 +422,12 @@ df_book_updated["temps passé sur le livre en heure"] = (df_book_updated["total_
 df_book_updated[['série', 'numéro_série']] = df_book_updated['Série'].str.split('#', expand=True)
 
 # changer le format de start_date et end_date en yyyy-mm-dd
-df_book_updated['start_date'] = df_book_updated['start_date'].dt.strftime('%Y-%m-%d')
+df_book_updated['start_date'] = df_book_updated['start_date'].dt.strftime('%Y-%m-%d') 
 df_book_updated['end_date'] = df_book_updated['end_date'].dt.strftime('%Y-%m-%d')
+
+
+
+
 
 # pourcent lu en pourcentage avec 0 chiffre après la virgule
 df_book_updated['pourcent_lu'] = df_book_updated['pourcent_lu'].astype(int)
@@ -436,7 +446,10 @@ df_book_updated.drop(columns=[
     "format"
     ], inplace=True)
 
-df_book_updated["pages lues à la minute"] = df_book_updated["total Nbr de pages lues"] / df_book_updated["temps passé sur le livre en minute"]
+df_book_updated["pages lues à la minute"] = (df_book_updated["total Nbr de pages lues"] / df_book_updated["temps passé sur le livre en minute"]).round(1)
+
+df_book_updated["category1"] = df_book_updated["categorie"].str.split("/").str[0]
+df_book_updated["category2"] = df_book_updated["categorie"].str.split("/").str[1]
 
     
 # Réorganiser les colonnes
@@ -449,7 +462,7 @@ ordered_columns = [
         'total_temps_sur_page_seconde', 'temps passé sur le livre en minute',
         'temps passé sur le livre en heure', 'heure_lecture_par_jour_de_lecture',
         'minutes_lecture_par_jour_de_lecture', 'temps_lecture_par_jour_de_lecture_formatee(hh:mm:ss)',
-        'total_temps_de_lecture_(hh:mm:ss)',"First published date","Date dernière ouverture"]
+        'total_temps_de_lecture_(hh:mm:ss)',"First published date","Date dernière ouverture","category1","category2"]
 df_book_updated = df_book_updated[ordered_columns]
 
 df_book_updated.rename(columns={
@@ -457,7 +470,7 @@ df_book_updated.rename(columns={
     # "série":"Série",
     "categorie":"Catégorie",
     # "numéro_série":"#",
-    "First published date":"Année publication",
+    "First published date":"Year rel",
     "Date dernière ouverture":"Date de lecture",
     "page":"# pages",
     "total Nbr de pages lues":"# pages lues",
@@ -492,27 +505,27 @@ folder_update_path = "sqlite/update"
 folder_archive_path = "sqlite/archive"
 sqlite_update_path = os.path.join(folder_update_path, "statistics.sqlite3")
 
-# Vérifier si le fichier existe dans le dossier de mise à jour
-if os.path.exists(sqlite_update_path):
-    # Générer un horodatage dans le format souhaité (exemple : YYYYMMDD_HHMMSS)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+# # Vérifier si le fichier existe dans le dossier de mise à jour
+# if os.path.exists(sqlite_update_path):
+#     # Générer un horodatage dans le format souhaité (exemple : YYYYMMDD_HHMMSS)
+#     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-    # Construire le nouveau nom de fichier avec l'horodatage
-    new_filename = f"statistics_{timestamp}.sqlite3"
-    new_filepath = os.path.join(folder_archive_path, new_filename)
+#     # Construire le nouveau nom de fichier avec l'horodatage
+#     new_filename = f"statistics_{timestamp}.sqlite3"
+#     new_filepath = os.path.join(folder_archive_path, new_filename)
     
-    # Déplacer et renommer le fichier vers le dossier archive
-    shutil.move(sqlite_update_path, new_filepath)
-    print(f"Fichier déplacé et renommé en {new_filename}")
-    # Compter le nombre de fichiers dans le dossier archive
-    num_files = len([name for name in os.listdir(folder_archive_path) if os.path.isfile(os.path.join(folder_archive_path, name))])
-    if num_files > 3:
-        # Afficher le message avec le nombre de fichiers
-        print(f"Il y a {num_files} fichiers de sauvegarde, pense à faire du ménage, tu vas pas garder 2000 sauvegardes, tu payes pas tes bytes ou quoi ?")
+#     # Déplacer et renommer le fichier vers le dossier archive
+#     shutil.move(sqlite_update_path, new_filepath)
+#     print(f"Fichier déplacé et renommé en {new_filename}")
+#     # Compter le nombre de fichiers dans le dossier archive
+#     num_files = len([name for name in os.listdir(folder_archive_path) if os.path.isfile(os.path.join(folder_archive_path, name))])
+#     if num_files > 3:
+#         # Afficher le message avec le nombre de fichiers
+#         print(f"Il y a {num_files} fichiers de sauvegarde, pense à faire du ménage, tu vas pas garder 2000 sauvegardes, tu payes pas tes bytes ou quoi ?")
 
     
-else:
-    print(f"Aucun fichier trouvé à l'emplacement : {sqlite_update_path}")
+# else:
+#     print(f"Aucun fichier trouvé à l'emplacement : {sqlite_update_path}")
 
 
 
@@ -522,6 +535,7 @@ end_time = time.time()
 
 # Calculate and print the execution time
 execution_time = end_time - start_time
+execution_time = round(execution_time, 2)
 print("="*80)
 
 print("update terminée")
