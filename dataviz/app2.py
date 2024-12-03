@@ -106,7 +106,7 @@ fig0 = px.bar(category_counts_sorted,
              text_auto=True
              
              )
-fig0.update_traces(textposition="outside")
+fig0.update_traces(textposition="inside")
 fig0.update_layout(xaxis=dict(
         showticklabels=False,  # Masquer les étiquettes de l'axe des x
         zeroline=False,        # Masquer la ligne zéro de l'axe des x
@@ -115,8 +115,6 @@ fig0.update_layout(xaxis=dict(
          # Masquer la ligne de l'axe des x
     )
 )
-# Afficher le graphique
-# graph = fig0.show()
 
 # nombre de livres lus par mois
 # Convertir la colonne 'end_date' en type datetime
@@ -147,9 +145,9 @@ fig1 = px.bar(books_per_month,
 )
 
 
-fig1.update_traces(textposition="outside",
-                   textfont=dict(size=12),   # Réduire la taille de la police si nécessaire
-    cliponaxis=False,
+fig1.update_traces(textposition="inside",
+                #    textfont=dict(size=12),   # Réduire la taille de la police si nécessaire
+    # cliponaxis=False,
                    textangle=0
                     
                 )
@@ -163,7 +161,37 @@ fig1.update_layout(
         bargap=0.1,  # Ajouter de l'espace entre les barres
     )
 
+# temps de lecture par mois
+# compter le temps en minute par mois
+time_per_month = df_book_updated.groupby(['month', 'month_num'])['temps passé sur le livre en heure'].sum().reset_index(name='Temps de lecture en heure').round(0)
+books_per_month = books_per_month.sort_values(by='month_num',ascending=True)
+# Créer un graphique à barres horizontal
+fig2 = px.bar(time_per_month,
+              x='Temps de lecture en heure', 
+              y='month',
+              orientation='h',
+              title='Time of reading in hours',
+              labels={'Temps de lecture en heure': 'Hours of reading', 'month': 'Month'},
+              text='Temps de lecture en heure',
+              text_auto=True
+)
 
+
+fig2.update_traces(textposition="inside",
+                   textfont=dict(size=12),   # Réduire la taille de la police si nécessaire
+                   cliponaxis=False,
+                   textangle=0 
+                )
+
+fig2.update_layout(
+    yaxis=dict(categoryorder="array", categoryarray=mois_ordres),  # S'assurer que les mois sont bien triés
+    xaxis=dict(
+        showticklabels=False,  # Masquer les étiquettes de l'axe des x
+        zeroline=False,        # Masquer la ligne zéro de l'axe des x
+        showline=False,
+        title=''),               # Masquer le nom de l'axe des x
+        bargap=0.1,  # Ajouter de l'espace entre les barres
+    )
 
 # 1/ PLUS LONGUE LECTURE
 # le temps de lecture max
@@ -278,7 +306,7 @@ nb_auteurs_lus = df_book_updated[df_book_updated['% lu'] == 100]["Auteurs"].nuni
 kpi1, kpi2, kpi3, kpi4 = st.columns(4)
 text1, text2, text3, text4 = st.columns(4)
 table = st.columns(1)
-chart1, chart2 = st.columns(2)
+chart1, chart2,chart4 = st.columns(3)
 chart3 = st.columns(1)
 
 # 1/ plus longue lecture 
@@ -332,6 +360,11 @@ with chart1:
 with chart2:
     st.markdown("### Reading by Month")
     st.plotly_chart(fig1) 
+
+# chart2 = st.container()
+with chart4:
+    st.markdown("### Time of Reading by Month")
+    st.plotly_chart(fig2) 
 # 5/ table
 
 # df_print = df_book_updated[df_book_updated['% lu'] == 100]
