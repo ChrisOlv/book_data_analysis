@@ -517,6 +517,158 @@ st.dataframe(
 # ====== fin matrice =====
 
 
+# ===== line chart average speed ====
+# Conversion des dates et création de colonnes supplémentaires
+df_stat['heure de début'] = pd.to_datetime(df_stat['heure de début'])
+df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture'])
+
+# Ajouter une colonne 'année_mois' pour regrouper par année et mois
+df_stat['année_mois'] = df_stat['date lecture'].dt.to_period('M')
+
+df_stat = df_stat[(df_stat['Temps passé sur la page en seconde'] > 5) & (df_stat['date lecture'].dt.year == 2024)]
+
+# Groupement par id_book, page et année_mois
+grouped = df_stat.groupby(['id_book', 'page', 'année_mois'], as_index=False).agg({
+    'Temps passé sur la page en seconde': 'sum',
+    'id_long': 'first',  # On garde le premier id_long pour chaque groupe
+    'date lecture': 'min',  # Première date de lecture
+    'heure de début': 'min'  # Première heure de début
+})
+
+# Calcul de la vitesse de lecture
+grouped['Temps total en minutes'] = grouped['Temps passé sur la page en seconde'] / 60
+grouped['vitesse (pages/minute)'] = 1 / grouped['Temps total en minutes']  # 1 page divisée par le temps en minutes
+grouped['vitesse (pages/heure)'] = grouped['vitesse (pages/minute)'] * 60  # Conversion en pages par heure
+
+
+
+# Regrouper par date lecture
+daily_speed = grouped.groupby('date lecture', as_index=False).agg({
+    'page': lambda x: x.nunique(),  # Nombre de pages uniques lues
+    'Temps passé sur la page en seconde': 'sum'  # Temps total passé en secondes
+})
+
+# Calcul de la vitesse moyenne journalière
+daily_speed['vitesse moyenne (pages/heure)'] = daily_speed['page'] / (daily_speed['Temps passé sur la page en seconde'] / 3600)
+
+# Trier par vitesse décroissante pour identifier les anomalies
+sorted_daily_speed = daily_speed.sort_values(by='vitesse moyenne (pages/heure)', ascending=False)
+
+
+
+
+
+
+# Supprimer les lignes avec une vitesse moyenne < 250
+filtered_daily_speed = daily_speed[daily_speed['vitesse moyenne (pages/heure)'] <= 220]
+
+mean_speed = filtered_daily_speed['vitesse moyenne (pages/heure)'].mean()
+median_speed = filtered_daily_speed['vitesse moyenne (pages/heure)'].median()
+std_speed = filtered_daily_speed['vitesse moyenne (pages/heure)'].std()
+top_speeds = filtered_daily_speed.nlargest(3, 'vitesse moyenne (pages/heure)')
+top_days = daily_speed.nlargest(4, 'vitesse moyenne (pages/heure)')[['date lecture', 'vitesse moyenne (pages/heure)']]
+worst_days = daily_speed.nsmallest(4, 'vitesse moyenne (pages/heure)')[['date lecture', 'vitesse moyenne (pages/heure)']]
+
+
+# Étape 2 : Associer id_book à ces journées
+top_days_with_books = top_days.merge(
+    grouped[['date lecture', 'id_book']].drop_duplicates(),  # Récupérer les ids uniques
+    on='date lecture',
+    how='left'
+)
+
+
+# Joindre les titres des livres au top_days_with_books
+top_days_with_titles = top_days_with_books.merge(
+    df_book_updated[['id', 'Titre']],  # Garder uniquement les colonnes nécessaires
+    left_on='id_book',
+    right_on='id',
+    how='left'
+)
+worst_days_with_titles = worst_days.merge(
+    grouped[['date lecture', 'id_book']],  # Ajouter l'ID du livre
+    on='date lecture',
+    how='left'
+).merge(
+    df_book_updated[['id', 'Titre']],
+    left_on='id_book',
+    right_on='id',
+    how='left'
+)
+# Tracé de la vitesse moyenne journalière après suppression des anomalies
+plt.figure(figsize=(12, 6))
+plt.plot(
+    filtered_daily_speed['date lecture'],
+    filtered_daily_speed['vitesse moyenne (pages/heure)'],
+    marker='.',
+    label='Average speed page/hour)'
+)
+
+# Ajouter des lignes horizontales pour les statistiques
+plt.axhline(y=mean_speed, color='red', linestyle='--', label=f'Average ({mean_speed:.2f})')
+plt.axhline(y=median_speed, color='green', linestyle='-.', label=f'Median ({median_speed:.2f})')
+plt.axhline(y=mean_speed + std_speed, color='blue', linestyle=':', label=f'+1 Std ({(mean_speed + std_speed):.2f})')
+plt.axhline(y=mean_speed - std_speed, color='blue', linestyle=':', label=f'-1 Std ({(mean_speed - std_speed):.2f})')
+
+# Annoter les 3 vitesses les plus élevées avec des positions dynamiques
+for i, row in enumerate(top_days_with_titles.iterrows()):
+    _, row = row
+    date = row['date lecture']
+    speed = row['vitesse moyenne (pages/heure)']
+    title = row['Titre']
+    
+    # Calcul d'un offset vertical différent pour éviter les chevauchements
+    vertical_offset = 15 if i % 2 == 0 else -15  # Alterner les directions
+    
+    plt.annotate(
+        f"{title}",
+        (date, speed),
+        textcoords="offset points",
+        xytext=(0, vertical_offset),  # Décalage vertical dynamique
+        ha='center',
+        fontsize=10,
+        color='purple',
+        arrowprops=dict(arrowstyle="->", color="purple", lw=0.5)  # Optionnel : ajouter une flèche
+    )
+
+# Annoter les jours avec les vitesses les plus lentes
+for i, row in enumerate(worst_days_with_titles.iterrows()):
+    _, row = row
+    date = row['date lecture']
+    speed = row['vitesse moyenne (pages/heure)']
+    title = row['Titre']
+    
+    vertical_offset = -25 if i % 2 == 0 else 25
+    plt.annotate(
+        f"{title}",
+        (date, speed),
+        textcoords="offset points",
+        xytext=(0, vertical_offset),
+        ha='center',
+        fontsize=10,
+        color='orange',
+        arrowprops=dict(arrowstyle="->", color="orange", lw=0.5)
+    )
+
+
+# Ajouter des détails au graphique
+plt.title("Vitesse Moyenne de Lecture par Jour", fontsize=16)
+plt.xlabel("Date de lecture", fontsize=12)
+plt.ylabel("Vitesse moyenne (pages/heure)", fontsize=12)
+plt.grid(False)
+plt.xticks(rotation=0)
+plt.legend()
+plt.tight_layout()
+
+# Afficher le graphique
+plt.show()
+
+st.pyplot(plt)
+
+# ======end line chart=======
+
+
+
 # # v 2
 ## plus de paramètres, mais c'est pas encore ça
 # import calplot  # Import Calplot au lieu de Calmap
