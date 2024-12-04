@@ -341,7 +341,6 @@ df_page_stat_data['date de fin de lecture'] = df_page_stat_data.groupby('id_book
 
 
 # Exporter la tables vers un fichier Parquet
-df_page_stat_data.to_parquet('data_sources_from_python/stats_lecture.parquet', engine='pyarrow')
 df_stat = df_page_stat_data
 
 
@@ -488,10 +487,17 @@ df_book_updated.rename(columns={
 
     }, inplace=True)
 
+# drop ligne de df_book_update ou titre = "ERROR: Error reading EPUB format	
+df_book_updated = df_book_updated[df_book_updated['Titre'] != "ERROR: Error reading EPUB format"]
 
+
+
+# merge les titres sur df_stats
+df_stat = df_stat.merge(df_book_updated[['id', 'Titre', 'Auteurs']], left_on='id_book', right_on='id', how='left').drop(columns='id')
 # output des tables dans le dossier sources python
 df_book_updated.to_parquet('data_sources_from_python/df_book_updated.parquet', engine='pyarrow', index=False)
 df_book_updated.to_excel('data_sources_from_python/df_book_updated.xlsx', index=False)
+df_stat.to_parquet('data_sources_from_python/stats_lecture.parquet', engine='pyarrow')
 print("Préparation df pour dataviz terminée")
 print("="*80)
 print("="*80)
@@ -500,10 +506,10 @@ print("archivage fichier sqlite en cours")
 
 
 
-# Définir les chemins des dossiers et du fichier
-folder_update_path = "sqlite/update"
-folder_archive_path = "sqlite/archive"
-sqlite_update_path = os.path.join(folder_update_path, "statistics.sqlite3")
+# # Définir les chemins des dossiers et du fichier
+# folder_update_path = "sqlite/update"
+# folder_archive_path = "sqlite/archive"
+# sqlite_update_path = os.path.join(folder_update_path, "statistics.sqlite3")
 
 # # Vérifier si le fichier existe dans le dossier de mise à jour
 # if os.path.exists(sqlite_update_path):

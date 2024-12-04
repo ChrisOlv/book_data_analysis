@@ -7,6 +7,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from datetime import timedelta
+import random
 
 
 
@@ -517,7 +518,78 @@ st.dataframe(
 # ====== fin matrice =====
 
 
-# ===== line chart average speed ====
+
+# ====== LINE CHART Temps de lecture ======
+# group by df_stat par date de lecture en jour, puis somme Temps passé sur la page en seconde
+daily_reading_time = df_stat.groupby('Date de lecture en jour')['Temps passé sur la page en seconde'].sum().reset_index()
+daily_reading_time['Temps passé sur la page en minute'] = daily_reading_time['Temps passé sur la page en seconde'] / 60
+daily_reading_time['Temps passé sur la page en heure'] = daily_reading_time['Temps passé sur la page en minute'] / 60
+# ajoute annotation : titre des 5 jours avec le plus de lecture, si il y a plusieurs livre, affiche le premier
+top_days = daily_reading_time.nlargest(15, 'Temps passé sur la page en heure')
+
+top_days_with_books = top_days.merge(
+    df_stat[['Date de lecture en jour', 'id_book', 'Titre']].drop_duplicates(),
+    left_on='Date de lecture en jour',
+    right_on='Date de lecture en jour',
+    how='left'
+)
+# créer une colonne titre_court, reprend uniquement les 10 premiers caractères de Titre
+top_days_with_books['Titre_court'] = top_days_with_books['Titre'].str[:25]
+# créer une colonne titre_court, reprend uniquement les mots de plus de 4 lettres et les chiffres
+# top_days_with_books['Titre_court'] = top_days_with_books['Titre'].str.findall(r'\b\w{4,}\b').str.join(' ')
+
+
+
+# new
+top_days_with_books['Titre_concatené'] = top_days_with_books.groupby('Date de lecture en jour')['Titre_court'].transform(lambda x: ' & '.join(x))
+top_days_with_books_unique = top_days_with_books.drop_duplicates(subset=['Date de lecture en jour'])
+
+
+
+
+# top_days_with_books = top_days_with_books.sort_values(by='Date de lecture en jour').drop_duplicates(subset=['Date de lecture en jour'])
+
+# plot daily_reading_time sur un line chart
+plt.figure(figsize=(12, 6))
+plt.plot(daily_reading_time['Date de lecture en jour'], daily_reading_time['Temps passé sur la page en heure'], marker='')
+
+# Ajouter des annotations pour les 5 jours avec le plus de lecture
+for i, row in top_days_with_books_unique .iterrows():
+    date = row['Date de lecture en jour']
+    time_spent = row['Temps passé sur la page en heure']
+    title = row['Titre_concatené']
+
+        # Créer un offset aléatoire
+    offset_x = random.randint(10, 50)  # Décalage horizontal entre 10 et 50
+    offset_y = random.randint(10, 30)  # Décalage vertical entre 10 et 30
+    
+    plt.annotate(
+        f"{title}",
+        (date, time_spent),
+        textcoords="offset points",
+        xytext=(offset_x, offset_y),  # Décalage vertical
+        ha='center',
+        fontsize=9,
+        color='blue',
+        # rotation=30,
+        # ajouter transparence texte
+        alpha=0.55,
+        arrowprops=dict(arrowstyle="->", color="blue", lw=0.1)  # Optionnel : ajouter une flèche
+    )
+
+plt.title('Temps de Lecture Total par Jour')
+plt.ylabel('Temps de Lecture (heures)')
+plt.grid(True)
+plt.xticks(rotation=0)
+plt.tight_layout()
+
+
+st.pyplot(plt)
+
+
+# ====== fin line chart Temps de lecture =======
+
+# ===== LINE CHART AVERAGE SPEED =====
 # Conversion des dates et création de colonnes supplémentaires
 df_stat['heure de début'] = pd.to_datetime(df_stat['heure de début'])
 df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture'])
@@ -605,10 +677,10 @@ plt.plot(
 )
 
 # Ajouter des lignes horizontales pour les statistiques
-plt.axhline(y=mean_speed, color='red', linestyle='--', label=f'Average ({mean_speed:.2f})')
-plt.axhline(y=median_speed, color='green', linestyle='-.', label=f'Median ({median_speed:.2f})')
-plt.axhline(y=mean_speed + std_speed, color='blue', linestyle=':', label=f'+1 Std ({(mean_speed + std_speed):.2f})')
-plt.axhline(y=mean_speed - std_speed, color='blue', linestyle=':', label=f'-1 Std ({(mean_speed - std_speed):.2f})')
+plt.axhline(y=mean_speed, color='red', linestyle='--', label=f'Average ({mean_speed:.0f})')
+plt.axhline(y=median_speed, color='green', linestyle='-.', label=f'Median ({median_speed:.0f})')
+plt.axhline(y=mean_speed + std_speed, color='blue', linestyle=':', label=f'+1 Std ({(mean_speed + std_speed):.0f})')
+plt.axhline(y=mean_speed - std_speed, color='blue', linestyle=':', label=f'-1 Std ({(mean_speed - std_speed):.0f})')
 
 # Annoter les 3 vitesses les plus élevées avec des positions dynamiques
 for i, row in enumerate(top_days_with_titles.iterrows()):
@@ -628,6 +700,7 @@ for i, row in enumerate(top_days_with_titles.iterrows()):
         ha='center',
         fontsize=10,
         color='purple',
+        alpha=0.55,
         arrowprops=dict(arrowstyle="->", color="purple", lw=0.5)  # Optionnel : ajouter une flèche
     )
 
@@ -647,6 +720,7 @@ for i, row in enumerate(worst_days_with_titles.iterrows()):
         ha='center',
         fontsize=10,
         color='orange',
+        alpha=0.55,
         arrowprops=dict(arrowstyle="->", color="orange", lw=0.5)
     )
 
@@ -666,9 +740,6 @@ plt.show()
 st.pyplot(plt)
 
 # ======end line chart=======
-
-
-
 # # v 2
 ## plus de paramètres, mais c'est pas encore ça
 # import calplot  # Import Calplot au lieu de Calmap
