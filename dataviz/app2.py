@@ -1,5 +1,4 @@
-# documentation here https://blog.streamlit.io/how-to-build-a-real-time-live-dashboard-with-streamlit/
-
+# Import libs
 import pandas as pd  # read csv, df manipulation
 import plotly.express as px  # interactive charts
 import streamlit as st  # 🎈 data web app development
@@ -10,7 +9,7 @@ from datetime import timedelta
 import random
 
 
-
+# Configuration de la page
 st.set_page_config(
     page_title="book log analysis",
     page_icon="📖",
@@ -18,6 +17,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed", #expanded sidebar
 )
 
+# Importer frame :
 uploaded_file = st.file_uploader("Upload your SQLite3 file", type=["sqlite3", "db"], key="summary_file_uploader")
 
 df_book_updated = pd.read_parquet("../data_sources_from_python/df_book_updated.parquet")
@@ -25,7 +25,7 @@ df_book_updated = pd.read_parquet("../data_sources_from_python/df_book_updated.p
 df_stat = pd.read_parquet("../data_sources_from_python/stats_lecture.parquet")
 # préparer df_book_updated pour le filtre : 
 df_book_updated['Date de lecture'] = pd.to_datetime(df_book_updated['Date de lecture'], format="%Y-%m-%dT%H:%M:%S.%fZ")
-
+ 
 # title
 # dashboard title
 st.title("📚 Book data analysis")
@@ -517,7 +517,7 @@ st.dataframe(
              )
 # ====== fin matrice =====
 
-
+st.markdown("## Charts") 
 
 # ====== LINE CHART Temps de lecture ======
 # group by df_stat par date de lecture en jour, puis somme Temps passé sur la page en seconde
