@@ -1,5 +1,4 @@
-# documentation here https://blog.streamlit.io/how-to-build-a-real-time-live-dashboard-with-streamlit/
-
+# Import libs
 import pandas as pd  # read csv, df manipulation
 import plotly.express as px  # interactive charts
 import streamlit as st  # 🎈 data web app development
@@ -10,7 +9,7 @@ from datetime import timedelta
 import random
 
 
-
+# Configuration de la page
 st.set_page_config(
     page_title="book log analysis",
     page_icon="📖",
@@ -18,6 +17,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed", #expanded sidebar
 )
 
+# Importer frame :
 uploaded_file = st.file_uploader("Upload your SQLite3 file", type=["sqlite3", "db"], key="summary_file_uploader")
 
 df_book_updated = pd.read_parquet("../data_sources_from_python/df_book_updated.parquet")
@@ -25,6 +25,9 @@ df_book_updated = pd.read_parquet("../data_sources_from_python/df_book_updated.p
 df_stat = pd.read_parquet("../data_sources_from_python/stats_lecture.parquet")
 # préparer df_book_updated pour le filtre : 
 df_book_updated['Date de lecture'] = pd.to_datetime(df_book_updated['Date de lecture'], format="%Y-%m-%dT%H:%M:%S.%fZ")
+df_book_paper = pd.read_excel("../paper_audio/paper_audio.xlsx")
+
+
 
 # title
 # dashboard title
@@ -38,6 +41,7 @@ with st.sidebar: # sidebar
     st.header("Chart parameters ⚙️")
     filter_annee = st.sidebar.multiselect('Year', ['2023', '2024'], default=['2024']) # filter by year
     livre_termine = st.radio(    "reading status",    key="visibility",    options=["read", "unfinished", "read + unfinished"],)
+    filter_format = st.sidebar.multiselect('format', ["paper", "audio","e-reader"], default = "e-reader")
     filter_auteur = st.sidebar.multiselect('Author', df_book_updated['Auteurs'].unique())
     filter_title = st.sidebar.multiselect('Title', df_book_updated['Titre'].unique())
     filter_category1 = st.sidebar.multiselect('Category', df_book_updated['category1'].unique())
@@ -52,6 +56,8 @@ with st.sidebar: # sidebar
     
 
 # on applique les filtres ici : 
+
+
 # filtre année :
 if filter_annee == []:
     df_book_updated = df_book_updated
@@ -285,9 +291,30 @@ minutes_livre_addict = livre_addict["minutes de lecture/jl"].values[0]
 
 # 8/ auteurs et livres : 
 # print le nombre de lignes de df_book_updated
+
+# idée pour appliquer le filtre filter_format.
+# temps de réponse trop long car doit recalculer à chaque fois
+
+# if filter_format == "paper":
+#     nb_livres_lus = df_book_paper[df_book_paper['format'] == "papier"].shape[0]
+
+# elif filter_format == "audio":
+#     nb_livres_lus = df_book_paper[df_book_paper['format'] == "audio"].shape[0]
+
+# elif filter_format == "e-reader":
+#     nb_livres_lus = df_book_updated[df_book_updated['% lu'] == 100].shape[0]
+
+# elif filter_format == ["e-reader","paper"]:
+#     nb_livres_lus = df_book_updated[df_book_updated['% lu'] == 100].shape[0] + df_book_paper[df_book_paper['format'] == "papier"].shape[0]
+
+# elif filter_format == ["e-reader","paper","audio"]:
+#     nb_livres_lus = df_book_updated[df_book_updated['% lu'] == 100].shape[0] + df_book_paper[df_book_paper['format'] == "papier"].shape[0] + df_book_paper[df_book_paper['format'] == "audio"].shape[0]
+
+# elif filter_format == ["paper","audio"]:
+#     nb_livres_lus = df_book_paper[df_book_paper['format'] == "papier"].shape[0] + df_book_paper[df_book_paper['format'] == "audio"].shape[0]
+# else:
+#     nb_livres_lus = df_book_updated[df_book_updated['% lu'] == 100].shape[0]
 nb_livres_lus = df_book_updated[df_book_updated['% lu'] == 100].shape[0]
-
-
 
 # print le nombre d'Auteurs lus de df_book_updated
 
@@ -517,7 +544,7 @@ st.dataframe(
              )
 # ====== fin matrice =====
 
-
+st.markdown("## Charts") 
 
 # ====== LINE CHART Temps de lecture ======
 # group by df_stat par date de lecture en jour, puis somme Temps passé sur la page en seconde
