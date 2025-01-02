@@ -752,10 +752,110 @@ st.pyplot(plt)
 
 # ======end line chart=======
 
-
+ 
 
 
 
 # =====timeline of reading=======
+# Plot de la timeline
+plt.figure(figsize=(18, 9))  
 
+df_book_updated['start_date'] = pd.to_datetime(df_book_updated['start_date'])
+df_book_updated['end_date'] = pd.to_datetime(df_book_updated['end_date'])
+
+# Fixer un espacement constant
+espacement_vertical = 1  # Espacement constant entre les lignes
+positions = [i * espacement_vertical for i in range(len(df_book_updated))]  # Génère des positions fixes
+
+for pos, (_, row) in zip(positions, df_book_updated.iterrows()):
+    plt.plot([row['start_date'], row['end_date']], [pos, pos], marker='o', label=row['Titre'])
+    plt.text(row['end_date'], pos, f" {row['Titre']}", va='center', fontsize=8)  # Titres au niveau exact
+
+plt.xlabel('Date', fontsize=12)
+plt.title('Timeline des livres lus', fontsize=14)
+plt.yticks([])  # Supprimer les ticks Y pour éviter les interférences
+plt.grid(axis='x', linestyle='--', alpha=0.7)
+plt.tight_layout()
+
+# Afficher le graphique
+plt.show()
+st.pyplot(plt)
 # ======end timeline of reading=====
+
+
+
+# =====sessions de lecture=======
+df_stat = df_stat.sort_values(by='heure de début')
+
+# Calculer la différence de temps entre les logs consécutifs
+df_stat['diff_minutes'] = df_stat['heure de début'].diff().dt.total_seconds() / 60
+
+# Définir un seuil pour les sessions (10 minutes)
+session_threshold = 15
+df_stat['session_id'] = (df_stat['diff_minutes'] > session_threshold).cumsum()
+
+# Regrouper par session
+sessions = df_stat.groupby('session_id').agg({
+    'id_book': 'first',  # ID du livre
+    'heure de début': 'min',  # Début de la session
+    'date de fin de lecture': 'max',  # Fin de la session
+    'Temps passé sur la page en seconde': 'sum',  # Temps total passé
+    'page': ['min', 'max'],  # Pages lues
+    'id_long': 'first'  # ID unique du livre
+})
+
+# Renommer les colonnes pour plus de clarté
+sessions.columns = ['_'.join(col).strip() for col in sessions.columns]
+sessions = sessions.reset_index()
+sessions_with_titles = sessions.merge(
+    df_book_updated[['id', 'Titre']],  # On garde uniquement les colonnes nécessaires
+    left_on='id_book_first',          # Clé de jointure depuis sessions
+    right_on='id',                    # Clé de jointure depuis df_book_updated
+    how='left'                        # Jointure à gauche pour garder toutes les sessions
+)
+
+# Supprimer la colonne 'id' de df_book_updated après la jointure si non nécessaire
+sessions_with_titles.drop(columns=['id'], inplace=True)
+
+# Ajouter une colonne pour l'heure de fin basée sur l'heure de début et le temps passé
+sessions_with_titles['heure de fin'] = sessions_with_titles['heure de début_min'] + pd.to_timedelta(sessions_with_titles['Temps passé sur la page en seconde_sum'], unit='s')
+
+# Filtrer pour le mois de décembre 2024
+if filter_annee not in [["2023"], ["2024"], ["2025"],["2026"]]:
+    dec_sessions = sessions_with_titles[sessions_with_titles['heure de début_min'].dt.year == 2024]
+else:
+    dec_sessions = sessions_with_titles[sessions_with_titles['heure de début_min'].dt.year == int(filter_annee[0])]
+# dec_sessions = dec_sessions[dec_sessions['heure de début_min'].dt.month == 12]
+
+# Utiliser une date de référence pour calculer les secondes depuis minuit
+def time_to_seconds(t):
+    return t.hour * 3600 + t.minute * 60 + t.second
+
+# Conserver les heures sous forme de secondes depuis le début de la journée pour affichage
+dec_sessions['heure_debut_sec'] = dec_sessions['heure de début_min'].dt.time.apply(time_to_seconds)
+dec_sessions['heure_fin_sec'] = dec_sessions['heure de fin'].dt.time.apply(time_to_seconds)
+
+# Plotting
+plt.figure(figsize=(18, 10))
+for idx, row in dec_sessions.iterrows():
+    plt.plot([row['heure de début_min'].date(), row['heure de début_min'].date()], 
+             [row['heure_debut_sec'], row['heure_fin_sec']], 
+             marker='o')
+
+# Configuration des étiquettes et des limites de l'axe des Y
+ticks = [i * 3600 for i in range(24)]
+labels = [f'{i:02d}:00' for i in range(24)]
+
+plt.yticks(ticks, labels)
+plt.ylim(0, 24 * 3600 - 1)
+
+plt.title('Sessions de lecture')
+plt.xlabel('Date')
+plt.ylabel('Hours')
+plt.xticks(rotation=45)
+plt.grid(True)
+plt.tight_layout()
+plt.show()
+st.pyplot(plt)
+
+# ======session de  lecture=====
