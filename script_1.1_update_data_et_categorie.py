@@ -510,32 +510,32 @@ print("archivage fichier sqlite en cours")
 
 
 
-# # Définir les chemins des dossiers et du fichier
-# folder_update_path = "sqlite/update"
-# folder_archive_path = "sqlite/archive"
-# sqlite_update_path = os.path.join(folder_update_path, "statistics.sqlite3")
+# Définir les chemins des dossiers et du fichier
+folder_update_path = "sqlite/update"
+folder_archive_path = "sqlite/archive"
+sqlite_update_path = os.path.join(folder_update_path, "statistics.sqlite3")
 
-# # Vérifier si le fichier existe dans le dossier de mise à jour
-# if os.path.exists(sqlite_update_path):
-#     # Générer un horodatage dans le format souhaité (exemple : YYYYMMDD_HHMMSS)
-#     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+# Vérifier si le fichier existe dans le dossier de mise à jour
+if os.path.exists(sqlite_update_path):
+    # Générer un horodatage dans le format souhaité (exemple : YYYYMMDD_HHMMSS)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     
-#     # Construire le nouveau nom de fichier avec l'horodatage
-#     new_filename = f"statistics_{timestamp}.sqlite3"
-#     new_filepath = os.path.join(folder_archive_path, new_filename)
+    # Construire le nouveau nom de fichier avec l'horodatage
+    new_filename = f"statistics_{timestamp}.sqlite3"
+    new_filepath = os.path.join(folder_archive_path, new_filename)
     
-#     # Déplacer et renommer le fichier vers le dossier archive
-#     shutil.move(sqlite_update_path, new_filepath)
-#     print(f"Fichier déplacé et renommé en {new_filename}")
-#     # Compter le nombre de fichiers dans le dossier archive
-#     num_files = len([name for name in os.listdir(folder_archive_path) if os.path.isfile(os.path.join(folder_archive_path, name))])
-#     if num_files > 3:
-#         # Afficher le message avec le nombre de fichiers
-#         print(f"Il y a {num_files} fichiers de sauvegarde, pense à faire du ménage, tu vas pas garder 2000 sauvegardes, tu payes pas tes bytes ou quoi ?")
+    # Déplacer et renommer le fichier vers le dossier archive
+    shutil.move(sqlite_update_path, new_filepath)
+    print(f"Fichier déplacé et renommé en {new_filename}")
+    # Compter le nombre de fichiers dans le dossier archive
+    num_files = len([name for name in os.listdir(folder_archive_path) if os.path.isfile(os.path.join(folder_archive_path, name))])
+    if num_files > 3:
+        # Afficher le message avec le nombre de fichiers
+        print(f"Il y a {num_files} fichiers de sauvegarde, pense à faire du ménage, tu vas pas garder 2000 sauvegardes, tu payes pas tes bytes ou quoi ?")
 
     
-# else:
-#     print(f"Aucun fichier trouvé à l'emplacement : {sqlite_update_path}")
+else:
+    print(f"Aucun fichier trouvé à l'emplacement : {sqlite_update_path}")
 
 
 

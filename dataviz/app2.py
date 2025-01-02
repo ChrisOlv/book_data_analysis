@@ -15,10 +15,10 @@ st.set_page_config(
     page_icon="📖",
     layout="wide", #wide-screen layout
     initial_sidebar_state="collapsed", #expanded sidebar
-)
+) 
 
 # Importer frame :
-uploaded_file = st.file_uploader("Upload your SQLite3 file", type=["sqlite3", "db"], key="summary_file_uploader")
+# uploaded_file = st.file_uploader("Upload your SQLite3 file", type=["sqlite3", "db"], key="summary_file_uploader")
 
 df_book_updated = pd.read_parquet("../data_sources_from_python/df_book_updated.parquet")
 # df_book_streamlit = pd.read_parquet("df_book_streamlit.parquet")
@@ -26,7 +26,7 @@ df_stat = pd.read_parquet("../data_sources_from_python/stats_lecture.parquet")
 # préparer df_book_updated pour le filtre : 
 df_book_updated['Date de lecture'] = pd.to_datetime(df_book_updated['Date de lecture'], format="%Y-%m-%dT%H:%M:%S.%fZ")
 df_book_paper = pd.read_excel("../paper_audio/paper_audio.xlsx")
-
+df_book_paper['date de lecture'] = pd.to_datetime(df_book_paper['date de lecture'], format='%d/%m/%Y')
 
 
 # title
@@ -37,11 +37,12 @@ st.markdown("""This dashboard presents an analysis of e-book reading data.
             The data comes from the reading logs of an e-reader using Ko-reader.
 
             """)
+
+# FILTERS
 with st.sidebar: # sidebar
     st.header("Chart parameters ⚙️")
-    filter_annee = st.sidebar.multiselect('Year', ['2023', '2024'], default=['2024']) # filter by year
+    filter_annee = st.sidebar.multiselect('Year', ['2023', '2024',"2025","last 12 months"], default=['last 12 months']) # filter by year
     livre_termine = st.radio(    "reading status",    key="visibility",    options=["read", "unfinished", "read + unfinished"],)
-    filter_format = st.sidebar.multiselect('format', ["paper", "audio","e-reader"], default = "e-reader")
     filter_auteur = st.sidebar.multiselect('Author', df_book_updated['Auteurs'].unique())
     filter_title = st.sidebar.multiselect('Title', df_book_updated['Titre'].unique())
     filter_category1 = st.sidebar.multiselect('Category', df_book_updated['category1'].unique())
@@ -61,8 +62,13 @@ with st.sidebar: # sidebar
 # filtre année :
 if filter_annee == []:
     df_book_updated = df_book_updated
+    df_book_paper = df_book_paper
+elif filter_annee == ["last 12 months"]:
+        df_book_updated = df_book_updated[df_book_updated['Date de lecture'] > df_book_updated['Date de lecture'].max() - timedelta(days=365)]
+        df_book_paper = df_book_paper[df_book_paper['date de lecture'] > df_book_paper['date de lecture'].max() - timedelta(days=365)]
 else:
     df_book_updated = df_book_updated[df_book_updated['Date de lecture'].dt.year.astype(str).isin(filter_annee)]
+    df_book_paper = df_book_paper[df_book_paper['date de lecture'].dt.year.astype(str).isin(filter_annee)]
 
 # filtre livre terminé ou non
 if livre_termine == "read":
@@ -233,109 +239,69 @@ titre_livre_addict = livre_addict["Titre"].values[0]
 auteur_livre_addict = livre_addict["Auteurs"].values[0]
 minutes_livre_addict = livre_addict["minutes de lecture/jl"].values[0]
 
-# # 5/ JOURS AVEC LE PLUS DE LECTURE
-# # Convertir la colonne 'date lecture' en datetime
-# df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture'], format='%Y-%m-%d')
-
-# # Joindre df_stat avec df_book_updated pour inclure le nom des livres
-# df_stat = df_stat.merge(df_book_updated, left_on='id_book', right_on='id', how='left')
-
-# # Agréger les données par 'date lecture'
-# agg_data = df_stat.groupby('date lecture').agg({
-#     'Temps de lecture en minute': 'sum',
-#     'page': 'nunique',
-#     'id_book': 'nunique'
-# }).reset_index()
-
-# # Ajouter la liste des id_book et des titres pour chaque date de lecture
-# book_ids_titles_by_date = df_stat.groupby('date lecture').apply(
-#     lambda x: ', '.join(sorted(set(f"{row['id_book']} ({row['Titre']})" for _, row in x.iterrows())))
-# ).reset_index()
-
-# # Fusionner les deux DataFrames
-# merged_data = pd.merge(agg_data, book_ids_titles_by_date, on='date lecture')
-
-# # Renommer pour plus de clarté
-# merged_data.columns = ['date lecture', 'Temps de lecture en minute', 'Nombre de pages', 'Nombre de livres', 'Books']
-
-# df_jours_plus_de_lecture = merged_data.sort_values('Temps de lecture en minute', ascending=False).head(3)
-
-# # 6/ PIC DE VITESSE
-# # Ajouter les colonnes 'id_book' et 'Titre' avec valeurs uniques pour chaque groupe
-# def concatenate_unique_values(series):
-#     return ', '.join(sorted(set(map(str, series))))
-
-# books_info = df_stat.groupby(['date lecture', 'Heure']).apply(
-#     lambda x: pd.Series({
-#         'id_books': concatenate_unique_values(x['id_book']),
-#         'Titres': concatenate_unique_values(x['Titre'])
-#     })
-# ).reset_index()
-
-# # Fusionner les deux DataFrames
-# result = pd.merge(agg_data_pic_vitesse, books_info, on=['date lecture', 'Heure'])
-
-# # Renommer les colonnes pour plus de clarté (si nécessaire)
-# result.columns = ['date lecture', 'Heure', 'Nombre de pages', 'Temps passé sur la page en seconde', 'Temps de lecture en minute', 'id_books', 'Titres']
-
-
-# result["page à la minute"] = (result["Nombre de pages"] / (result["Temps de lecture en minute"] )).round(2) 
-
-# # faire un head de result trié par page à la minute, uniquement quand page supérieur à 60
-# df_pic_vitesse = result[result["Nombre de pages"] > 60].sort_values(by='page à la minute', ascending=False).head(5)
-# # result.sort_values(by='page', ascending=False).head(10)
-
-# # 7/ plot des heures avec le plus de pages lues
-# plot7 = sns.countplot(x='Heure', data=result[result["Nombre de pages"] > 60].sort_values(by='page à la minute', ascending=False).head(100))
-
-
-# 8/ auteurs et livres : 
-# print le nombre de lignes de df_book_updated
-
-# idée pour appliquer le filtre filter_format.
-# temps de réponse trop long car doit recalculer à chaque fois
-
-# if filter_format == "paper":
-#     nb_livres_lus = df_book_paper[df_book_paper['format'] == "papier"].shape[0]
-
-# elif filter_format == "audio":
-#     nb_livres_lus = df_book_paper[df_book_paper['format'] == "audio"].shape[0]
-
-# elif filter_format == "e-reader":
-#     nb_livres_lus = df_book_updated[df_book_updated['% lu'] == 100].shape[0]
-
-# elif filter_format == ["e-reader","paper"]:
-#     nb_livres_lus = df_book_updated[df_book_updated['% lu'] == 100].shape[0] + df_book_paper[df_book_paper['format'] == "papier"].shape[0]
-
-# elif filter_format == ["e-reader","paper","audio"]:
-#     nb_livres_lus = df_book_updated[df_book_updated['% lu'] == 100].shape[0] + df_book_paper[df_book_paper['format'] == "papier"].shape[0] + df_book_paper[df_book_paper['format'] == "audio"].shape[0]
-
-# elif filter_format == ["paper","audio"]:
-#     nb_livres_lus = df_book_paper[df_book_paper['format'] == "papier"].shape[0] + df_book_paper[df_book_paper['format'] == "audio"].shape[0]
-# else:
-#     nb_livres_lus = df_book_updated[df_book_updated['% lu'] == 100].shape[0]
+# 5/ AUTEURS ET LIVRES
 nb_livres_lus = df_book_updated[df_book_updated['% lu'] == 100].shape[0]
-
+nb_livres_lus_papier = df_book_paper.shape[0]
 # print le nombre d'Auteurs lus de df_book_updated
 
 nb_auteurs_lus = df_book_updated[df_book_updated['% lu'] == 100]["Auteurs"].nunique()
+nb_auteurs_lus_papier = df_book_paper["Auteurs"].nunique()
 
-# # page configuration
 
 
-# FILTERS
+# =====Day of the Week Analysis=======
 
-## filter by year
+
+# "compter les livres par jours"
+df_book_updated['day_of_week'] = df_book_updated['Date de lecture'].dt.day_name()
+books_per_day_week = df_book_updated.groupby('day_of_week').size().reset_index(name='nombre de livres')
+books_per_day_week = books_per_day_week.sort_values(by='day_of_week',ascending=False)
+
+
+fig3 = px.bar(books_per_day_week,
+              x='day_of_week',
+              y='nombre de livres',
+              orientation='v',
+              title='Number of books read per day of the week',
+              labels={'nombre de livres': 'Nombre de livres', 'day_of_week': 'day_of_week'},
+              text='nombre de livres',
+              text_auto=True
+)
+fig3.update_traces(textposition="inside")
+fig3.update_layout(xaxis=dict(
+        showticklabels=True,  # Masquer les étiquettes de l'axe des x
+        zeroline=False,        # Masquer la ligne zéro de l'axe des x
+        showline=False,
+        title=''               # Masquer le nom de l'axe des x
+         # Masquer la ligne de l'axe des x
+    ))
+# chart4,chart5 = st.columns(2)
+
+
+
+
+
+# ======Day of the Week Analysis=======
+
+
+
 
 
 
 # KPIs/summary cards
 # create 4 columns
-kpi1, kpi2, kpi3, kpi4 = st.columns(4)
-text1, text2, text3, text4 = st.columns(4)
+kpi1, kpi2, kpi3, kpi4,kpi5 = st.columns(5)
+text1, text2, text3, text4,text5 = st.columns(5)
 table = st.columns(1)
 chart1, chart2,chart4 = st.columns(3)
+chart6,chart7,chart8 = st.columns(3)
 chart3 = st.columns(1)
+
+
+with chart6:
+    st.markdown("### Reading by day of the week")
+    fig = fig3
+    st.write(fig)
 
 # 1/ plus longue lecture 
 kpi1.metric(
@@ -365,11 +331,16 @@ text3.markdown(titre_livre_addict+" de "+auteur_livre_addict)
 
 #4/ auteurs et livres
 kpi4.metric(
-    label="# Books Read",
+    label="# e-Books Read",
     value=nb_livres_lus
     )
 text4.markdown(f"by {nb_auteurs_lus}  different authors")
 
+kpi5.metric(
+    label="# paper Books Read",
+    value=nb_livres_lus_papier
+    )
+text5.markdown(f"by {nb_auteurs_lus_papier}  different authors")
 
 st.markdown("## Book table")
 
@@ -403,12 +374,20 @@ df_print = df_print[~df_print['Titre'].isin(titres_a_exclure)]
 # changer la caolonne date lecture en YYYY-MM-DD
 df_print['Date de lecture'] = df_print['Date de lecture'].dt.strftime('%Y-%m-%d')
 
-st.markdown("Books read during the year :")
+st.markdown("e-Books read during the year :")
 st.dataframe(
     df_print[["Titre","Auteurs","Catégorie","Date de lecture","Year rel", "# pages lues","pages lues à la minute","Durée lecture (j)", "jours de lecture effectifs (jl)", "# pages lues/jl","temps passé sur le livre en heure","minutes de lecture/jl" ]],
              hide_index=True,
              height=500,
              )
+st.markdown("## Paper Books read during the year :")
+df_book_paper["date de lecture"] = pd.to_datetime(df_book_paper["date de lecture"]).dt.date
+
+st.dataframe(
+    df_book_paper[["Titre","Auteurs","date de lecture","# pages lues","format"]]
+                  ,hide_index=True)
+
+
 
 # # pour faire un print : 
 # text0 = st.empty()
@@ -435,7 +414,12 @@ df_serie = df_aggregated.set_index('date lecture')['Temps de lecture en minute']
 df_serie = df_serie.asfreq('D', fill_value=0)
 
 # filter_annee est au format ['2024'], on veut 2024
-annee = int(filter_annee[0])
+if filter_annee == ["last 12 months"]:
+    annee = df_serie.index.max().year
+elif filter_annee == [] :
+    annee = df_serie.index.max().year
+else:
+    annee = int(filter_annee[0])
 
 
 # st.pyplot(figure)
@@ -767,50 +751,11 @@ plt.show()
 st.pyplot(plt)
 
 # ======end line chart=======
-# # v 2
-## plus de paramètres, mais c'est pas encore ça
-# import calplot  # Import Calplot au lieu de Calmap
 
-# # Préparer les données
-# df_stat = df_stat.copy()  # Fait une copie pour éviter d'éventuelles modifications inutiles
-# df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture'])
-# df_aggregated = df_stat.groupby('date lecture')['Temps de lecture en minute'].sum().reset_index()
-# df_serie = df_aggregated.set_index('date lecture')['Temps de lecture en minute']
 
-# # Remplir les dates manquantes avec 0
-# df_serie = df_serie.asfreq('D', fill_value=0)
 
-# # Filtrer l'année
-# annee = int(filter_annee[0])
 
-# # Fonction pour créer le CalMap avec Calplot
-# def create_calmap(df_serie, year):
-#     # Filtrer les données pour l'année en question
-#     df_year = df_serie[df_serie.index.year == year]
 
-#     # Création du plot
-#     fig, ax = calplot.calplot(
-#         df_year,
+# =====timeline of reading=======
 
-#         cmap='YlGn',
-#         figsize=(10, 10),
-#         colorbar=False,
-#         suptitle='Year of reading',
-#         linewidth=0.5,
-#         linecolor='white',
-#         daylabels=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-#         dayticks=[0, 1, 2, 3, 4, 5, 6],
-#     )
-#     fig.tight_layout(pad=-45)
-#     # fig.subplots_adjust(top=0.9, bottom=0.15, left=0.1, right=0.9)
-
-#     # sm = plt.cm.ScalarMappable(cmap='YlGn', norm=plt.Normalize(vmin=df_year.min(), vmax=df_year.max()))
-#     # sm.set_array([])
-#     # cbar = fig.colorbar(sm, ax=ax, orientation='horizontal', pad=0.05)
-#     # cbar.set_label("Temps de lecture (minutes)", fontsize=8)  # Ajuster la taille du label
-#     # cbar.ax.tick_params(labelsize=6)  # Réduire la taille des ticks
-#     # Afficher le plot dans Streamlit
-#     st.pyplot(fig)
-
-# # Afficher le plot dans Streamlit
-# create_calmap(df_serie, annee)
+# ======end timeline of reading=====
