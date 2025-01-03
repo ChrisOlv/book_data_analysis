@@ -786,8 +786,14 @@ st.pyplot(plt)
 
 # =====sessions de lecture=======
 
+# Convertir les colonnes liées au temps en format datetime
+# Convertir les colonnes liées au temps en format datetime
+df_stat['heure de début'] = pd.to_datetime(df_stat['heure de début'])
+df_stat['date de fin de lecture'] = pd.to_datetime(df_stat['date de fin de lecture'])
 
+# Trier les logs par "heure de début"
 df_stat = df_stat.sort_values(by='heure de début')
+
 # Calculer la différence de temps entre les logs consécutifs
 df_stat['diff_minutes'] = df_stat['heure de début'].diff().dt.total_seconds() / 60
 
@@ -808,9 +814,9 @@ sessions = df_stat.groupby('session_id').agg({
 # Renommer les colonnes pour plus de clarté
 sessions.columns = ['_'.join(col).strip() for col in sessions.columns]
 sessions = sessions.reset_index()
-# merge pour garder les titres
+# merge pour garder les titres, et les categores des livres
 sessions_with_titles = sessions.merge(
-    df_book_updated[['id', 'Titre']],  # On garde uniquement les colonnes nécessaires
+    df_book_updated[['id', 'Titre',"Catégorie"]],  # On garde uniquement les colonnes nécessaires
     left_on='id_book_first',          # Clé de jointure depuis sessions
     right_on='id',                    # Clé de jointure depuis df_book_updated
     how='left'                        # Jointure à gauche pour garder toutes les sessions
@@ -822,18 +828,33 @@ sessions_with_titles.drop(columns=['id'], inplace=True)
 sessions_with_titles["nombre de pages lues"] = sessions_with_titles["page_max"] - sessions_with_titles["page_min"] + 1
 sessions_with_titles["Temps de lecture en minute"] = (sessions_with_titles["Temps passé sur la page en seconde_sum"] / 60).round(2)
 
-# Filtrer pour le mois de décembre 2024
-if filter_annee not in [["2023"], ["2024"], ["2025"],["2026"]]:
-    dec_sessions = sessions_with_titles[sessions_with_titles['heure de début_min'].dt.year == 2024]
-else:
-    dec_sessions = sessions_with_titles[sessions_with_titles['heure de début_min'].dt.year == int(filter_annee[0])]
-# dec_sessions = dec_sessions[dec_sessions['heure de début_min'].dt.month == 12]
 # Ajouter une colonne pour l'heure de fin basée sur l'heure de début et le temps passé
 sessions_with_titles['heure de fin'] = sessions_with_titles['heure de début_min'] + pd.to_timedelta(sessions_with_titles['Temps passé sur la page en seconde_sum'], unit='s')
+
+
+
+if filter_annee == ["last 12 months"]:
+    année_plot = df_stat['date lecture'].dt.year.max()
+elif filter_annee == [] :
+    année_plot = df_stat['date lecture'].dt.year.max()
+else:
+    année_plot = int(filter_annee[0])
+
+# Filtrer pour le mois de décembre 2024
+session_plot = sessions_with_titles[sessions_with_titles['heure de début_min'].dt.year == année_plot]
+# session_plot = session_plot[session_plot['heure de début_min'].dt.month == 12] # pour plot un seul mois
+
+
 
 # Utiliser une date de référence pour calculer les secondes depuis minuit
 def time_to_seconds(t):
     return t.hour * 3600 + t.minute * 60 + t.second
+
+
+# attention  affiche des lignes verticale pour les sessions à cheval
+# Conserver les heures sous forme de secondes depuis le début de la journée pour affichage
+session_plot['heure_debut_sec'] = session_plot['heure de début_min'].dt.time.apply(time_to_seconds)
+session_plot['heure_fin_sec'] = session_plot['heure de fin'].dt.time.apply(time_to_seconds)
 
 # masquer les sessions à cheval sur 2 jours pour plot
 session_plot_droped = sessions_with_titles[sessions_with_titles['heure de début_min'].dt.day == sessions_with_titles['heure de fin'].dt.day]
@@ -855,19 +876,81 @@ labels = [f'{i:02d}:00' for i in range(24)]
 plt.yticks(ticks, labels)
 plt.ylim(0, 24 * 3600 - 1)
 
-plt.title('Sessions de lecture')
-# plt.xlabel('Date')
-# plt.ylabel('Heure (HH:MM)')
+plt.title('Sessions de lecture en décembre 2024')
+plt.xlabel('Date')
+plt.ylabel('Heure (HH:MM)')
 plt.xticks(rotation=45)
 plt.grid(True)
 plt.tight_layout()
 plt.show()
 
 
-
-
-
-
 st.pyplot(plt)
 
 # ======session de  lecture=====
+
+
+# ======session de lecture analyse=====
+number_of_reading_session = session_plot.shape[0]
+
+moyenne_temps_lecture_par_sessions_minutes = (session_plot["Temps passé sur la page en seconde_sum"].mean()/60).round(2)
+
+nombre_de_sessions_par_jour_moyen = session_plot["heure de début_min"].dt.date.value_counts().mean().round(1)
+
+session_plus_longue_minutes = session_plot["Temps passé sur la page en seconde_sum"].max()/60
+
+sessions_de_plus_de_30_minutes = session_plot[session_plot["Temps passé sur la page en seconde_sum"] > 30*60].shape[0]
+sessions_de_plus_de_60_minutes = session_plot[session_plot["Temps passé sur la page en seconde_sum"] > 60*60].shape[0]
+sessions_de_moins_de_15_minutes = session_plot[session_plot["Temps passé sur la page en seconde_sum"] < 15*60].shape[0]
+sessions_de_moins_de_5_minutes = session_plot[session_plot["Temps passé sur la page en seconde_sum"] < 5*60].shape[0]
+
+# prepare un canevas pour 4 plots
+fig, axs = plt.subplots(2, 2, figsize=(12, 12))
+# donne un titre au canevas
+fig.suptitle('Distribution des temps de lecture par session')
+# ajoute une ligne de texte juste sous le titre du suptitle
+fig.text(0.5, 0.95, f'Année {année_plot}, nombre de sessions : {number_of_reading_session} ', ha='center')
+fig.text(0.5, 0.935, f"Une session = groupe d'enregistrement avec un intervalle de moins de {session_threshold} min ", ha='center')
+
+# plot 1 : Distribution des temps de lecture par catégorie
+sns.violinplot(data=session_plot, y='Temps de lecture en minute', x='Catégorie', ax=axs[0, 0])
+axs[0, 0].set_title('Sessions by category')
+# axs[0, 0].set_ylabel('Temps de lecture en minute')
+axs[0, 0].set_xlabel('Catégorie')
+axs[0, 0].tick_params(axis='x', rotation=45)
+
+# plot 2 : Distribution des temps de lecture par mois de lecture
+sns.violinplot(data=session_plot, y='Temps de lecture en minute', x=session_plot["heure de début_min"].dt.month, ax=axs[0, 1])
+axs[0, 1].set_title('Sessions by month')
+axs[0, 1].set_ylabel('Temps de lecture en minute')
+axs[0, 1].set_xlabel('Mois de lecture')
+
+
+# plot 3 : Distribution des temps de lecture par jour de la semaine
+sns.violinplot(data=session_plot, y='Temps de lecture en minute', x=session_plot["heure de début_min"].dt.dayofweek, ax=axs[1, 0])
+axs[1, 0].set_title('Sessions by day of the week')
+axs[1, 0].set_ylabel('Temps de lecture en minute')
+axs[1, 0].set_xlabel('Jour de la semaine')
+
+# plot 4 : Distribution des temps de lecture par heure de début de session
+sns.violinplot(data=session_plot, y='Temps de lecture en minute', x=session_plot["heure de début_min"].dt.hour, ax=axs[1, 1])
+axs[1, 1].set_title('Session by hour of reading')
+axs[1, 1].set_ylabel('Temps de lecture en minute')
+axs[1, 1].set_xlabel('Heure de début de session')
+
+plt.tight_layout(rect=[0, 0, 1, 0.95])
+plt.show()
+
+st.pyplot(plt)
+
+# ======finsession de lecture=====
+
+# ====kpi2=====
+st.markdown(f"number_of_reading_session : {number_of_reading_session}")
+st.markdown(f"moyenne_temps_lecture_par_sessions_minutes : {moyenne_temps_lecture_par_sessions_minutes}")
+st.markdown(f"nombre_de_sessions_par_jour_moyen : {nombre_de_sessions_par_jour_moyen}")
+st.markdown(f"session_plus_longue_minutes : {session_plus_longue_minutes}")
+st.markdown(f"sessions_de_plus_de_30_minutes : {sessions_de_plus_de_30_minutes}")
+st.markdown(f"sessions_de_plus_de_60_minutes : {sessions_de_plus_de_60_minutes}")
+st.markdown(f"sessions_de_moins_de_15_minutes : {sessions_de_moins_de_15_minutes}")
+st.markdown(f"sessions_de_moins_de_5_minutes : {sessions_de_moins_de_5_minutes}")
