@@ -492,7 +492,7 @@ df_book_updated.rename(columns={
     }, inplace=True)
 
 # drop ligne de df_book_update ou titre = "ERROR: Error reading EPUB format	
-auteurs_a_exclure = ["Tamara Rosier", "Michael Joseph"] 
+auteurs_a_exclure = ["Tamara Rosier", "Michael Joseph","Michael Joseph Ferguson"] 
 titres_a_exclure = ["ERROR: Error reading EPUB format"]
 df_book_updated = df_book_updated[~df_book_updated['Auteurs'].isin(auteurs_a_exclure)]
 df_book_updated = df_book_updated[~df_book_updated['Titre'].isin(titres_a_exclure)]
