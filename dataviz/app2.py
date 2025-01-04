@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from datetime import timedelta
 import random
+import numpy as np
 
 
 # Configuration de la page
@@ -63,12 +64,15 @@ with st.sidebar: # sidebar
 if filter_annee == []:
     df_book_updated = df_book_updated
     df_book_paper = df_book_paper
+    df_stat = df_stat
 elif filter_annee == ["last 12 months"]:
         df_book_updated = df_book_updated[df_book_updated['Date de lecture'] > df_book_updated['Date de lecture'].max() - timedelta(days=365)]
         df_book_paper = df_book_paper[df_book_paper['date de lecture'] > df_book_paper['date de lecture'].max() - timedelta(days=365)]
+        df_stat = df_stat[df_stat['date lecture'] > df_stat['date lecture'].max() - timedelta(days=365)]
 else:
     df_book_updated = df_book_updated[df_book_updated['Date de lecture'].dt.year.astype(str).isin(filter_annee)]
     df_book_paper = df_book_paper[df_book_paper['date de lecture'].dt.year.astype(str).isin(filter_annee)]
+    df_stat = df_stat[df_stat['date lecture'].dt.year.astype(str).isin(filter_annee)]
 
 # filtre livre terminé ou non
 if livre_termine == "read":
@@ -159,19 +163,19 @@ fig1 = px.bar(books_per_month,
 
 
 fig1.update_traces(textposition="inside",
-                #    textfont=dict(size=12),   # Réduire la taille de la police si nécessaire
-    # cliponaxis=False,
+
                    textangle=0
                     
                 )
 fig1.update_layout(
-    yaxis=dict(categoryorder="array", categoryarray=mois_ordres),  # S'assurer que les mois sont bien triés
+    yaxis=dict(categoryorder="array", categoryarray=mois_ordres,autorange="reversed"),  # S'assurer que les mois sont bien triés
     xaxis=dict(
         showticklabels=False,  # Masquer les étiquettes de l'axe des x
         zeroline=False,        # Masquer la ligne zéro de l'axe des x
         showline=False,
         title=''),               # Masquer le nom de l'axe des x
         bargap=0.1,  # Ajouter de l'espace entre les barres
+        
     )
 
 # temps de lecture par mois
@@ -191,13 +195,13 @@ fig2 = px.bar(time_per_month,
 
 
 fig2.update_traces(textposition="inside",
-                   textfont=dict(size=12),   # Réduire la taille de la police si nécessaire
+                   textfont=dict(size=12),   # Réduire la taille de la police
                    cliponaxis=False,
                    textangle=0 
                 )
 
 fig2.update_layout(
-    yaxis=dict(categoryorder="array", categoryarray=mois_ordres),  # S'assurer que les mois sont bien triés
+    yaxis=dict(categoryorder="array", categoryarray=mois_ordres,autorange="reversed"),  # S'assurer que les mois sont bien triés
     xaxis=dict(
         showticklabels=False,  # Masquer les étiquettes de l'axe des x
         zeroline=False,        # Masquer la ligne zéro de l'axe des x
@@ -252,29 +256,126 @@ nb_auteurs_lus_papier = df_book_paper["Auteurs"].nunique()
 # =====Day of the Week Analysis=======
 
 
-# "compter les livres par jours"
-df_book_updated['day_of_week'] = df_book_updated['Date de lecture'].dt.day_name()
-books_per_day_week = df_book_updated.groupby('day_of_week').size().reset_index(name='nombre de livres')
-books_per_day_week = books_per_day_week.sort_values(by='day_of_week',ascending=False)
+# "compter les heures de lectures par jour
+
+df_stat['Date de lecture'] = pd.to_datetime(df_stat['date lecture'], format="%Y-%m-%d")
+df_stat['day_of_week'] = df_stat['Date de lecture'].dt.day_name()
+books_per_day_week = df_stat.groupby('day_of_week').size().reset_index(name='hours of reading')
+# Trier par ordre des jours de la semaine lundi 1, mardi 2, etc.
+days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
+books_per_day_week['day_of_week'] = pd.Categorical(books_per_day_week['day_of_week'], categories=days_order, ordered=True)
 
 
 fig3 = px.bar(books_per_day_week,
-              x='day_of_week',
-              y='nombre de livres',
-              orientation='v',
-              title='Number of books read per day of the week',
-              labels={'nombre de livres': 'Nombre de livres', 'day_of_week': 'day_of_week'},
-              text='nombre de livres',
+              y='day_of_week',
+              x='hours of reading',
+              orientation='h',
+              title='hours of reading by day of the week',
+              labels={'hours of reading': 'hours of reading', 'day_of_week': 'day_of_week'},
+              text='hours of reading',
               text_auto=True
 )
-fig3.update_traces(textposition="inside")
-fig3.update_layout(xaxis=dict(
+fig3.update_traces(textposition="inside",cliponaxis=False,)
+fig3.update_layout(
+    xaxis=dict(
         showticklabels=True,  # Masquer les étiquettes de l'axe des x
         zeroline=False,        # Masquer la ligne zéro de l'axe des x
         showline=False,
-        title=''               # Masquer le nom de l'axe des x
-         # Masquer la ligne de l'axe des x
-    ))
+        title='',
+    ),
+    yaxis=dict(
+        categoryorder="array", categoryarray=days_order,autorange="reversed" # utiliser l'ordre des jours manuel
+        )
+)
+
+# chart4,chart5 = st.columns(2)
+
+ 
+
+
+
+# ======Day of the Week Analysis=======
+# =====hour of the day Analysis =======
+
+
+# "compter les heures de lectures par tranche horaire
+
+# faire des tranches de 3 heures
+df_stat['hour_of_day'] = df_stat['heure de début'].dt.hour
+# Créer des tranches horaires de 2 heures
+bins = [i for i in range(0, 25, 2)]
+labels = [f'{str(i).zfill(2)}h-{str(i+2).zfill(2)}h' for i in range(0, 24, 2)]
+df_stat['tranche_horaire'] = pd.cut(df_stat['hour_of_day'], bins=bins, labels=labels, right=False)
+
+# Compter le nombre d'heures de lecture par tranche horaire
+books_per_hour = df_stat.groupby('tranche_horaire')['Temps de lecture en heure'].sum().reset_index(name='total_reading_time').round(1)
+# Créer un graphique à barres horizontal
+# fig4 = px.bar(books_per_hour,
+#               y='tranche_horaire',
+#               x='total_reading_time',
+#               orientation='h',
+#               title='Total reading time by time of day',
+#               labels={'total_reading_time': 'Total Reading Time (s)', 'tranche_horaire': 'Time of day'},
+#               text='total_reading_time',
+#               text_auto=True)
+# fig4.update_traces(textposition="inside", cliponaxis=False)
+# fig4.update_layout(
+#     xaxis=dict(
+#         showticklabels=True,
+#         zeroline=False,
+#         showline=False,
+
+#         title='',
+#     ),
+#     yaxis=dict(
+#         categoryorder="array", categoryarray=labels, autorange="reversed"
+#     )
+# )
+
+
+
+
+# Initialisation de la figure et des axes
+fig5, ax = plt.subplots(figsize=(12, 6))
+
+# Tracer le KDE plot
+sns.kdeplot(
+    data=df_stat,
+    x='hour_of_day',
+    weights='Temps de lecture en heure',
+    bw_adjust=0.5,
+    fill=True,
+    color='#0068c9',
+    ax=ax
+)
+
+# Configurer les axes et le titre
+ax.set_title('Density of Reading Time by Hour of Day', fontsize=16, pad=20)
+ax.set_xlabel('Hour of the Day', fontsize=14, labelpad=10)
+ax.set_ylabel('', fontsize=14, labelpad=10)
+ax.set_xticks(np.arange(0, 25, 2))  # Ajouter les ticks des heures
+ax.grid(axis='y', linestyle='--', alpha=0.8)
+# mettre le background du plot en transparent. Attention, ne fonctionne pas avec streamlit en darkmode
+# ax.patch.set_alpha(0)  # Fond des axes transparent
+# fig5.patch.set_alpha(0)  # Fond de la figure transparent
+
+
+# fig5, ax = plt.subplots(figsize=(10, 6))
+# sns.kdeplot(df_stat['hour_of_day'], shade=True, color='skyblue', ax=ax)
+# ax.set_title('Density plot of reading hours')
+# ax.set_xlabel('Hour of the day')
+# ax.set_ylabel('Density')
+# ax.xaxis.set_major_locator(mdates.HourLocator(interval=1))
+# ax.xaxis.set_major_formatter(mdates.DateFormatter('%H'))
+# ax.set_xlim(0, 24)
+# # st.pyplot(fig5)
+
+
+
+
+
+
+
 # chart4,chart5 = st.columns(2)
 
 
@@ -297,10 +398,17 @@ chart1, chart2,chart4 = st.columns(3)
 chart6,chart7,chart8 = st.columns(3)
 chart3 = st.columns(1)
 
-
+# with chart7:
+#     st.markdown("### Reading by time of day")
+#     st.write(fig4)
 with chart6:
     st.markdown("### Reading by day of the week")
     fig = fig3
+    st.write(fig)
+with chart8:
+    st.markdown("### Reading hours distribution")
+    st.markdown("Density plot of reading hours")
+    fig = fig5
     st.write(fig)
 
 # 1/ plus longue lecture 
@@ -840,7 +948,7 @@ elif filter_annee == [] :
 else:
     année_plot = int(filter_annee[0])
 
-# Filtrer pour le mois de décembre 2024
+#Filtrer pour le mois de décembre 2024
 session_plot = sessions_with_titles[sessions_with_titles['heure de début_min'].dt.year == année_plot]
 # session_plot = session_plot[session_plot['heure de début_min'].dt.month == 12] # pour plot un seul mois
 
@@ -876,7 +984,7 @@ labels = [f'{i:02d}:00' for i in range(24)]
 plt.yticks(ticks, labels)
 plt.ylim(0, 24 * 3600 - 1)
 
-plt.title('Sessions de lecture en décembre 2024')
+plt.title(f'Sessions de lecture en {année_plot}')
 plt.xlabel('Date')
 plt.ylabel('Heure (HH:MM)')
 plt.xticks(rotation=45)
