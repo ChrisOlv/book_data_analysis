@@ -1054,11 +1054,63 @@ st.pyplot(plt)
 # ======finsession de lecture=====
 
 # ====kpi2=====
-st.markdown(f"number_of_reading_session : {number_of_reading_session}")
-st.markdown(f"moyenne_temps_lecture_par_sessions_minutes : {moyenne_temps_lecture_par_sessions_minutes}")
-st.markdown(f"nombre_de_sessions_par_jour_moyen : {nombre_de_sessions_par_jour_moyen}")
-st.markdown(f"session_plus_longue_minutes : {session_plus_longue_minutes}")
-st.markdown(f"sessions_de_plus_de_30_minutes : {sessions_de_plus_de_30_minutes}")
-st.markdown(f"sessions_de_plus_de_60_minutes : {sessions_de_plus_de_60_minutes}")
-st.markdown(f"sessions_de_moins_de_15_minutes : {sessions_de_moins_de_15_minutes}")
-st.markdown(f"sessions_de_moins_de_5_minutes : {sessions_de_moins_de_5_minutes}")
+# st.markdown(f"number_of_reading_session : {number_of_reading_session}")
+# st.markdown(f"moyenne_temps_lecture_par_sessions_minutes : {moyenne_temps_lecture_par_sessions_minutes}")
+# st.markdown(f"nombre_de_sessions_par_jour_moyen : {nombre_de_sessions_par_jour_moyen}")
+# st.markdown(f"session_plus_longue_minutes : {session_plus_longue_minutes}")
+# st.markdown(f"sessions_de_plus_de_30_minutes : {sessions_de_plus_de_30_minutes}")
+# st.markdown(f"sessions_de_plus_de_60_minutes : {sessions_de_plus_de_60_minutes}")
+# st.markdown(f"sessions_de_moins_de_15_minutes : {sessions_de_moins_de_15_minutes}")
+# st.markdown(f"sessions_de_moins_de_5_minutes : {sessions_de_moins_de_5_minutes}")
+st.markdown("### KPIs à visualiser")
+
+kpi10, kpi11, kpi12, kpi13 = st.columns(4)
+kpi14, kpi15, kpi16, kpi17 = st.columns(4)
+
+
+kpi10.metric(
+    label="## number_of_reading_session",
+    value=round(number_of_reading_session),
+    help=("Countinous reading session")
+    )
+
+kpi11.metric(
+    label="## moyenne_temps_lecture_par_sessions_minutes",
+    value=round(moyenne_temps_lecture_par_sessions_minutes),
+    help=("moyenne_temps_lecture_par_sessions_minutes")
+    )
+
+kpi12.metric(
+    label="## nombre_de_sessions_par_jour_moyen",
+    value=round(nombre_de_sessions_par_jour_moyen),
+    help=("nombre_de_sessions_par_jour_moyen")
+    )
+
+kpi13.metric(
+    label="## session_plus_longue_minutes",
+    value=round(session_plus_longue_minutes),
+    help=("session_plus_longue_minutes")
+    )
+kpi14.metric(
+    label="## sessions_de_plus_de_30_minutes",
+    value=round(sessions_de_plus_de_30_minutes),
+    help=("sessions_de_plus_de_30_minutes")
+    )
+
+kpi15.metric(
+    label="## sessions_de_plus_de_60_minutes",
+    value=round(sessions_de_plus_de_60_minutes),
+    help=("sessions_de_plus_de_60_minutes")
+    )
+
+kpi16.metric(
+    label="## sessions_de_moins_de_15_minutes",
+    value=round(sessions_de_moins_de_15_minutes),
+    help=("sessions_de_moins_de_15_minutes")
+    )
+
+kpi17.metric(
+    label="## sessions_de_moins_de_5_minutes",
+    value=round(sessions_de_moins_de_5_minutes),
+    help=("sessions_de_moins_de_5_minutes")
+    )
