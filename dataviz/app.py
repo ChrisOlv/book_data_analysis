@@ -8,10 +8,16 @@ import matplotlib.dates as mdates
 from datetime import timedelta
 import random
 import numpy as np
+import os 
 try:
     from menu import menu_with_redirect
 except ImportError as e:
     print("ImportError:", e)
+
+
+# Change le répertoire de travail pour le répertoire du script --> permet de lancer le script depuis n'importe où
+os.chdir(os.path.dirname(__file__))
+
 
 # Configuration de la page
 st.set_page_config(
