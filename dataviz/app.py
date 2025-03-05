@@ -1096,15 +1096,15 @@ kpi14, kpi15, kpi16, kpi17 = st.columns(4)
 
 
 kpi10.metric(
-    label="## numbee of reading session",
+    label="## number of reading session",
     value=round(number_of_reading_session),
     help=("Countinous reading session")
     )
 
 kpi11.metric(
-    label="## moyenne_temps_lecture_par_sessions_minutes",
+    label="## Average reading time per session (minutes)",
     value=round(moyenne_temps_lecture_par_sessions_minutes),
-    help=("moyenne_temps_lecture_par_sessions_minutes")
+    help=("Average reading time per session (minutes)")
     )
 
 kpi12.metric(
