@@ -26,7 +26,9 @@ st.set_page_config(
     layout="wide", #wide-screen layout
     initial_sidebar_state="collapsed", #expanded sidebar
 ) 
-page2 = st.Page("pages/page2.py", title="page 2", icon="📖")
+
+# pour ajouter une autre page ici :
+# page2 = st.Page("pages/page2.py", title="page 2", icon="📖")
 # Importer frame :
 # uploaded_file = st.file_uploader("Upload your SQLite3 file", type=["sqlite3", "db"], key="summary_file_uploader")
 
@@ -646,6 +648,7 @@ st.dataframe(
 # ====== fin matrice =====
 
 st.markdown("## Charts") 
+st.markdown("Following charts display statistics about reading time and reading speed")
 
 # ====== LINE CHART Temps de lecture ======
 # group by df_stat par date de lecture en jour, puis somme Temps passé sur la page en seconde
@@ -705,8 +708,10 @@ for i, row in top_days_with_books_unique .iterrows():
         arrowprops=dict(arrowstyle="->", color="blue", lw=0.1)  # Optionnel : ajouter une flèche
     )
 
-plt.title('Temps de Lecture Total par Jour')
-plt.ylabel('Temps de Lecture (heures)')
+plt.suptitle('Total reading time per day', fontsize=16, y=1)
+plt.title('Annotations display the title of the book read during the day', fontsize=10, y=1)
+
+plt.ylabel('Temps de Lecture (heures)', fontsize=8)
 plt.grid(True)
 plt.xticks(rotation=0)
 plt.tight_layout()
@@ -854,9 +859,10 @@ for i, row in enumerate(worst_days_with_titles.iterrows()):
 
 
 # Ajouter des détails au graphique
-plt.title("Vitesse Moyenne de Lecture par Jour", fontsize=16)
-plt.xlabel("Date de lecture", fontsize=12)
-plt.ylabel("Vitesse moyenne (pages/heure)", fontsize=12)
+plt.suptitle('Mean reading speed', fontsize=16, y=1)
+plt.title('The graph represent the mean reading speed for each day of reading. Annotation describe the top/worst 3 reading speed.', fontsize=10, y=1)
+plt.xlabel("Date", fontsize=8)
+plt.ylabel("Mean reading speed (pages/hour)", fontsize=8)
 plt.grid(False)
 plt.xticks(rotation=0)
 plt.legend()
@@ -889,7 +895,8 @@ for pos, (_, row) in zip(positions, df_book_updated.iterrows()):
     plt.text(row['end_date'], pos, f" {row['Titre']}", va='center', fontsize=8)  # Titres au niveau exact
 
 plt.xlabel('Date', fontsize=12)
-plt.title('Timeline des livres lus', fontsize=14)
+plt.suptitle('Timeline of reading', fontsize=16, y=1)
+plt.title('Dots represents starting and ending date', fontsize=10, y=1)
 plt.yticks([])  # Supprimer les ticks Y pour éviter les interférences
 plt.grid(axis='x', linestyle='--', alpha=0.7)
 plt.tight_layout()
@@ -993,9 +1000,11 @@ labels = [f'{i:02d}:00' for i in range(24)]
 plt.yticks(ticks, labels)
 plt.ylim(0, 24 * 3600 - 1)
 
-plt.title(f'Sessions de lecture en {année_plot}')
+plt.title("Each colored dot represent a reading session interval")
+# sous titre avec une description 
+plt.suptitle(f'Reading sessions in {année_plot}', y=1, fontsize=16)
 plt.xlabel('Date')
-plt.ylabel('Heure (HH:MM)')
+plt.ylabel('Hour (HH:MM)')
 plt.xticks(rotation=45)
 plt.grid(True)
 plt.tight_layout()
