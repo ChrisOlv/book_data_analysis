@@ -859,8 +859,8 @@ for i, row in enumerate(worst_days_with_titles.iterrows()):
 
 
 # Ajouter des détails au graphique
-plt.suptitle('Mean reading speed', fontsize=16, y=1)
-plt.title('The graph represent the mean reading speed for each day of reading. Annotation describe the top/worst 3 reading speed.', fontsize=10, y=1)
+plt.suptitle('Average reading speed', fontsize=16, y=1)
+plt.title('The graph represents the average reading speed for each day of reading. Annotations describe the top/worst 3 reading speed.', fontsize=10, y=1)
 plt.xlabel("Date", fontsize=8)
 plt.ylabel("Mean reading speed (pages/hour)", fontsize=8)
 plt.grid(False)
@@ -1033,36 +1033,45 @@ sessions_de_moins_de_5_minutes = session_plot[session_plot["Temps passé sur la 
 # prepare un canevas pour 4 plots
 fig, axs = plt.subplots(2, 2, figsize=(12, 12))
 # donne un titre au canevas
-fig.suptitle('Distribution des temps de lecture par session')
+fig.suptitle('Distribution of reading time per session')
 # ajoute une ligne de texte juste sous le titre du suptitle
-fig.text(0.5, 0.95, f'Année {année_plot}, nombre de sessions : {number_of_reading_session} ', ha='center')
-fig.text(0.5, 0.935, f"Une session = groupe d'enregistrement avec un intervalle de moins de {session_threshold} min ", ha='center')
+fig.text(0.5, 0.95, f'Year {année_plot}, number of session : {number_of_reading_session} ', ha='center')
+fig.text(0.5, 0.935, f"One session = group of records with an interval of less than {session_threshold} min ", ha='center')
 
 # plot 1 : Distribution des temps de lecture par catégorie
 sns.violinplot(data=session_plot, y='Temps de lecture en minute', x='Catégorie', ax=axs[0, 0])
-axs[0, 0].set_title('Sessions by category')
+axs[0, 0].set_title('Session by category')
 # axs[0, 0].set_ylabel('Temps de lecture en minute')
-axs[0, 0].set_xlabel('Catégorie')
+axs[0, 0].set_xlabel('Category')
 axs[0, 0].tick_params(axis='x', rotation=45)
+axs[0, 0].set_ylabel('Reading time in minutes')
+# y axis every 30 min
+axs[0, 0].set_yticks(range(0, 300, 30))
 
 # plot 2 : Distribution des temps de lecture par mois de lecture
 sns.violinplot(data=session_plot, y='Temps de lecture en minute', x=session_plot["heure de début_min"].dt.month, ax=axs[0, 1])
-axs[0, 1].set_title('Sessions by month')
-axs[0, 1].set_ylabel('Temps de lecture en minute')
-axs[0, 1].set_xlabel('Mois de lecture')
+axs[0, 1].set_title('Session by month')
+axs[0, 1].set_ylabel('Reading time in minutes')
+axs[0, 1].set_xlabel('Month of reading')
+axs[0, 1].set_yticks(range(0, 300, 30))
+
 
 
 # plot 3 : Distribution des temps de lecture par jour de la semaine
 sns.violinplot(data=session_plot, y='Temps de lecture en minute', x=session_plot["heure de début_min"].dt.dayofweek, ax=axs[1, 0])
-axs[1, 0].set_title('Sessions by day of the week')
-axs[1, 0].set_ylabel('Temps de lecture en minute')
-axs[1, 0].set_xlabel('Jour de la semaine')
+axs[1, 0].set_title('Session by day of the week')
+axs[1, 0].set_ylabel('Reading time in minutes')
+axs[1, 0].set_xlabel('Day of the week')
+axs[1, 0].set_yticks(range(0, 300, 30))
+
 
 # plot 4 : Distribution des temps de lecture par heure de début de session
 sns.violinplot(data=session_plot, y='Temps de lecture en minute', x=session_plot["heure de début_min"].dt.hour, ax=axs[1, 1])
 axs[1, 1].set_title('Session by hour of reading')
-axs[1, 1].set_ylabel('Temps de lecture en minute')
-axs[1, 1].set_xlabel('Heure de début de session')
+axs[1, 1].set_ylabel('Reading time in minutes')
+axs[1, 1].set_xlabel('Start hour of session')
+axs[1, 1].set_yticks(range(0, 300, 30))
+
 
 plt.tight_layout(rect=[0, 0, 1, 0.95])
 plt.show()
@@ -1080,14 +1089,14 @@ st.pyplot(plt)
 # st.markdown(f"sessions_de_plus_de_60_minutes : {sessions_de_plus_de_60_minutes}")
 # st.markdown(f"sessions_de_moins_de_15_minutes : {sessions_de_moins_de_15_minutes}")
 # st.markdown(f"sessions_de_moins_de_5_minutes : {sessions_de_moins_de_5_minutes}")
-st.markdown("### KPIs à visualiser")
+st.markdown("### Reading session KPI")
 
 kpi10, kpi11, kpi12, kpi13 = st.columns(4)
 kpi14, kpi15, kpi16, kpi17 = st.columns(4)
 
 
 kpi10.metric(
-    label="## number_of_reading_session",
+    label="## numbee of reading session",
     value=round(number_of_reading_session),
     help=("Countinous reading session")
     )
