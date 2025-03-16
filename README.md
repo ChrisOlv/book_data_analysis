@@ -2,14 +2,19 @@ book_data_analysis
 
 ![Inspiration Image](1.inspirations/Sans%20titre.png)
 
-# Python script
+# Description
+## Python script
 "script_1_update" is the main script.
 Main steps : 
 1. get info from the sqlite db
 2. prepare and clean data
 3. generate categories / sub categories, year of release from gpt4o llm
-4. generate 3 parquet files into data_source_from_python : df_books, stats_lectures, df_book_updated 
+4. generate 3 parquet files into data_source_from_python : df_books, df_stat, df_book_updated 
 
+## Streamlit app.py
+* App.py is the main Python code who display interactive dataviz.
+* It takes the 3 files (df_book_updated, df_stat, df_book_paper) and vizualise them into multiples graphs.
+* The streamlit page is interactive, you can use the left pannel to interact with data (date, authors, status ...)
 
 # tuto
 
