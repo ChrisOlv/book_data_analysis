@@ -9,10 +9,10 @@ from datetime import timedelta
 import random
 import numpy as np
 import os 
-try:
-    from menu import menu_with_redirect
-except ImportError as e:
-    print("ImportError:", e)
+# try:
+#     from menu import menu_with_redirect
+# except ImportError as e:
+#     print("ImportError:", e)
 
 
 # Change le répertoire de travail pour le répertoire du script --> permet de lancer le script depuis n'importe où
@@ -116,7 +116,7 @@ if filter_category2 == []:
 else:
     df_book_updated = df_book_updated[df_book_updated['category2'].isin(filter_category2)]
 
-# préparation des dataviz
+# préparation des dataviz 
 
 # 0 / nombre de libres par catégorie : 
 category_counts = df_book_updated['Catégorie'].value_counts().reset_index()
@@ -730,7 +730,7 @@ df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture'])
 # Ajouter une colonne 'année_mois' pour regrouper par année et mois
 df_stat['année_mois'] = df_stat['date lecture'].dt.to_period('M')
 
-df_stat = df_stat[(df_stat['Temps passé sur la page en seconde'] > 5) & (df_stat['date lecture'].dt.year == 2024)]
+df_stat = df_stat[(df_stat['Temps passé sur la page en seconde'] > 5) & (df_stat['date lecture'].dt.year == annee)]
 
 # Groupement par id_book, page et année_mois
 grouped = df_stat.groupby(['id_book', 'page', 'année_mois'], as_index=False).agg({
