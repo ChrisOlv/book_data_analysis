@@ -20,3 +20,12 @@ st.set_page_config(
     layout="wide", #wide-screen layout
     initial_sidebar_state="collapsed", #expanded sidebar
 ) 
+
+# title
+# dashboard title
+st.title("📚 Book data analysis - zoom")
+st.subheader("Logs analysis from KO e-reader")
+st.markdown("""This dashboard presents an analysis of e-book reading data.
+            The data comes from the reading logs of an e-reader using Ko-reader.
+
+            """)
