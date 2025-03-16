@@ -27,19 +27,18 @@ st.set_page_config(
     initial_sidebar_state="collapsed", #expanded sidebar
 ) 
 
-@st.cache_data
-def load_data():
-    df_book_updated = pd.read_parquet("../data_sources_from_python/df_book_updated.parquet")
-    df_stat = pd.read_parquet("../data_sources_from_python/stats_lecture.parquet")
-    df_book_paper = pd.read_excel("../paper_audio/paper_audio.xlsx")
-    
-    # Conversion des dates
-    df_book_updated['Date de lecture'] = pd.to_datetime(df_book_updated['Date de lecture'], format="%Y-%m-%dT%H:%M:%S.%fZ")
-    df_book_paper['date de lecture'] = pd.to_datetime(df_book_paper['date de lecture'], format='%d/%m/%Y')
-    
-    return df_book_updated, df_book_paper, df_stat
+# pour ajouter une autre page ici :
+# page2 = st.Page("pages/page2.py", title="page 2", icon="📖")
+# Importer frame :
+# uploaded_file = st.file_uploader("Upload your SQLite3 file", type=["sqlite3", "db"], key="summary_file_uploader")
 
-df_book_updated, df_book_paper, df_stat = load_data()
+df_book_updated = pd.read_parquet("../data_sources_from_python/df_book_updated.parquet")
+# df_book_streamlit = pd.read_parquet("df_book_streamlit.parquet")
+df_stat = pd.read_parquet("../data_sources_from_python/stats_lecture.parquet")
+# préparer df_book_updated pour le filtre : 
+df_book_updated['Date de lecture'] = pd.to_datetime(df_book_updated['Date de lecture'], format="%Y-%m-%dT%H:%M:%S.%fZ")
+df_book_paper = pd.read_excel("../paper_audio/paper_audio.xlsx")
+df_book_paper['date de lecture'] = pd.to_datetime(df_book_paper['date de lecture'], format='%d/%m/%Y')
 
 
 # title
@@ -51,54 +50,71 @@ st.markdown("""This dashboard presents an analysis of e-book reading data.
 
             """)
 
-# Sidebar : configuration des filtres
-with st.sidebar:
+# FILTERS
+with st.sidebar: # sidebar
     st.header("Chart parameters ⚙️")
-    filter_annee = st.multiselect('Year', ['2023', '2024', '2025', "last 12 months"], default=['last 12 months'])
-    livre_termine = st.radio("Reading status", options=["read", "unfinished", "read + unfinished"])
-    filter_auteur = st.multiselect('Author', df_book_updated['Auteurs'].unique())
-    filter_title = st.multiselect('Title', df_book_updated['Titre'].unique())
-    filter_category1 = st.multiselect('Category', df_book_updated['category1'].unique())
-    filter_category2 = st.multiselect('Subcategory', df_book_updated['category2'].unique())
+    filter_annee = st.sidebar.multiselect('Year', ['2023', '2024',"2025","last 12 months"], default=['last 12 months']) # filter by year
+    livre_termine = st.radio(    "reading status",    key="visibility",    options=["read", "unfinished", "read + unfinished"],)
+    filter_auteur = st.sidebar.multiselect('Author', df_book_updated['Auteurs'].unique())
+    filter_title = st.sidebar.multiselect('Title', df_book_updated['Titre'].unique())
+    filter_category1 = st.sidebar.multiselect('Category', df_book_updated['category1'].unique())
+    filter_category2 = st.sidebar.multiselect('Subcategory', df_book_updated['category2'].unique())
+
 
     st.markdown("---")
     st.markdown(
-        '<h6>Made in &nbsp<img src="https://streamlit.io/images/brand/streamlit-mark-color.png" alt="Streamlit logo" height="16">&nbsp by <a href="https://github.com/ChrisOlv">@chris</a></h6>',
-        unsafe_allow_html=True,
-    )
+            '<h6>Made in &nbsp<img src="https://streamlit.io/images/brand/streamlit-mark-color.png" alt="Streamlit logo" height="16">&nbsp by <a href="https://github.com/ChrisOlv">@chris</a></h6>',
+            unsafe_allow_html=True,
+        )
+    
 
-# Fonction de filtrage par année
-def filter_by_year(df, date_col, filter_val):
-    if not filter_val:
-        return df
-    if filter_val == ["last 12 months"]:
-        return df[df[date_col] > df[date_col].max() - timedelta(days=365)]
-    else:
-        return df[df[date_col].dt.year.astype(str).isin(filter_val)]
-
-# Application des filtres par date sur les différents DataFrames
-df_book_updated = filter_by_year(df_book_updated, 'Date de lecture', filter_annee)
-df_book_paper = filter_by_year(df_book_paper, 'date de lecture', filter_annee)
-df_stat = filter_by_year(df_stat, 'date lecture', filter_annee)
+# on applique les filtres ici : 
 
 
-# Filtrage sur le statut de lecture
+# filtre année :
+if filter_annee == []:
+    df_book_updated = df_book_updated
+    df_book_paper = df_book_paper
+    df_stat = df_stat
+elif filter_annee == ["last 12 months"]:
+        df_book_updated = df_book_updated[df_book_updated['Date de lecture'] > df_book_updated['Date de lecture'].max() - timedelta(days=365)]
+        df_book_paper = df_book_paper[df_book_paper['date de lecture'] > df_book_paper['date de lecture'].max() - timedelta(days=365)]
+        df_stat = df_stat[df_stat['date lecture'] > df_stat['date lecture'].max() - timedelta(days=365)]
+else:
+    df_book_updated = df_book_updated[df_book_updated['Date de lecture'].dt.year.astype(str).isin(filter_annee)]
+    df_book_paper = df_book_paper[df_book_paper['date de lecture'].dt.year.astype(str).isin(filter_annee)]
+    df_stat = df_stat[df_stat['date lecture'].dt.year.astype(str).isin(filter_annee)]
+
+# filtre livre terminé ou non
 if livre_termine == "read":
     df_book_updated = df_book_updated[df_book_updated['% lu'] == 100]
 elif livre_termine == "unfinished":
     df_book_updated = df_book_updated[df_book_updated['% lu'] != 100]
-# "read + unfinished" ne nécessite pas d'action
+else:
+    df_book_updated = df_book_updated
 
-# Filtrage par auteur, titre et catégories (en vérifiant que la liste n'est pas vide)
-if filter_auteur:
+# filtre auteur : 
+if filter_auteur == []:
+    df_book_updated = df_book_updated
+else:
     df_book_updated = df_book_updated[df_book_updated['Auteurs'].isin(filter_auteur)]
-if filter_title:
-    df_book_updated = df_book_updated[df_book_updated['Titre'].isin(filter_title)]
-if filter_category1:
-    df_book_updated = df_book_updated[df_book_updated['category1'].isin(filter_category1)]
-if filter_category2:
-    df_book_updated = df_book_updated[df_book_updated['category2'].isin(filter_category2)]
 
+# filtre title : 
+if filter_title == []:
+    df_book_updated = df_book_updated
+else:
+    df_book_updated = df_book_updated[df_book_updated['Titre'].isin(filter_title)]
+
+# filtre category1 :
+if filter_category1 == []:
+    df_book_updated = df_book_updated
+else:
+    df_book_updated = df_book_updated[df_book_updated['category1'].isin(filter_category1)]
+# filtre category2 :
+if filter_category2 == []:
+    df_book_updated = df_book_updated
+else:
+    df_book_updated = df_book_updated[df_book_updated['category2'].isin(filter_category2)]
 
 # préparation des dataviz 
 
