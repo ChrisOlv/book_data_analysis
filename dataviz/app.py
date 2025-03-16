@@ -130,7 +130,7 @@ fig0 = px.bar(category_counts_sorted,
              y='Catégorie',
              orientation='h',  # 'h' indique un bar chart horizontal
              title='Number of books by category',
-             labels={'nombre de livre': 'Number of books', 'Catégorie': 'Category'},
+             labels={'nombre de livre': 'Number of books', 'Catégorie': ''},
              text_auto=True
              
              )
@@ -282,7 +282,7 @@ fig3 = px.bar(books_per_day_week,
               x='hours of reading',
               orientation='h',
               title='hours of reading by day of the week',
-              labels={'hours of reading': 'hours of reading', 'day_of_week': 'day_of_week'},
+              labels={'hours of reading': 'hours of reading', 'day_of_week': ''},
               text='hours of reading',
               text_auto=True
 )
