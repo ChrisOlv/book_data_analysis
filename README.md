@@ -12,7 +12,7 @@ Main steps :
 4. generate 3 parquet files into data_source_from_python : df_books, df_stat, df_book_updated 
 
 ## Streamlit app.py
-* App.py is the main Python code who display interactive dataviz.
+* App.py is the main Python code to display interactive dataviz.
 * It takes the 3 files (df_book_updated, df_stat, df_book_paper) and vizualise them into multiples graphs.
 * The streamlit page is interactive, you can use the left pannel to interact with data (date, authors, status ...)
 
