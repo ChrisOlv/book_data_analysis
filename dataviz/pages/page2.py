@@ -9,6 +9,8 @@ from datetime import timedelta
 import random
 import numpy as np
 import os
+import datetime
+
 try:
     from menu import menu_with_redirect
 except ImportError as e:
@@ -26,9 +28,7 @@ st.set_page_config(
 # dashboard title
 st.title("📚 Book data analysis - zoom")
 st.subheader("Comparison view")
-st.markdown("""Comparison view
 
-            """)
 
 
 
@@ -63,6 +63,8 @@ nb_livre_comparison_year_lus = df_book_updated[
     (df_book_updated['Date de lecture'].dt.year == comparison_year) & 
     (df_book_updated['% lu'] == 100)
 ]['Titre'].nunique()
+ratio_lu_current = round((nb_livre_current_year_lus / nb_livre_current_year) * 100)
+ratio_lu_comparison = round((nb_livre_comparison_year_lus / nb_livre_comparison_year) * 100)
 
 ## 3/ compter le nombre d'auteurs et ratio livres / auteurs
 nb_auteurs_current_year = df_book_updated[df_book_updated['Date de lecture'].dt.year == current_year]['Auteurs'].nunique()
@@ -80,25 +82,48 @@ nb_auteurs_comparison_year_only = df_book_updated[
     (df_book_updated['Auteurs'].isin(df_book_updated[df_book_updated['Date de lecture'].dt.year == current_year]['Auteurs']) == False)
 ]['Auteurs'].nunique()
 
+## 4/ nombre de pages
+### nombre de pages total
+nb_page_current_year = df_book_updated[df_book_updated['Date de lecture'].dt.year == current_year]['# pages lues'].sum()
+nb_page_comparison_year = df_book_updated[df_book_updated['Date de lecture'].dt.year == comparison_year]['# pages lues'].sum()
+
+### nombre de page par livre en moyenne
+nb_page_moyen_current_year = round(df_book_updated[df_book_updated['Date de lecture'].dt.year == current_year]['# pages lues'].mean())
+nb_page_moyen_comparison_year = round(df_book_updated[df_book_updated['Date de lecture'].dt.year == comparison_year]['# pages lues'].mean())
+
+## 5/ temps de lecture
+### somme temps de lecture
+temps_lecture_current_year = (df_book_updated[df_book_updated['Date de lecture'].dt.year == current_year]['temps passé sur le livre en minute'].sum())/60
+temps_lecture_comparison_year = round((df_book_updated[df_book_updated['Date de lecture'].dt.year == comparison_year]['temps passé sur le livre en minute'].sum())/60)
+
+### temps de lecture par jour # temps de lecture / nombre de jours entre le 1er janvier et aujourd'hui
+days_elapsed = (datetime.date.today() - datetime.date(current_year, 1, 1)).days
+
+temp_lecture_par_jour = temps_lecture_current_year / days_elapsed
+temps_lecture_par_jour_comparison_year = temps_lecture_comparison_year / 365
+### vitesse de lecture
+
 
 # Création du df
 data = {
+        comparison_year: [
+        f"{nb_livre_comparison_year} livres entammés",
+        f"{nb_livre_comparison_year_lus} livres lus<br> {ratio_lu_comparison}%",
+        f"{nb_auteurs_comparison_year} auteurs <br>{ratio_auteurs_comparison_year}% auteurs / livres <br>{nb_auteurs_comparison_year_only} auteurs uniques",
+        f"{nb_page_comparison_year}p. lues<br>{nb_page_moyen_comparison_year} p./livre",
+        f"{temps_lecture_comparison_year}h de lecture<br>soit en moyenne {round(temps_lecture_par_jour_comparison_year*60)} min/jour",
+
+    ],
+    " ":["","","VS","",""],
     current_year: [
         f"{nb_livre_current_year} livres entammés",
-        f"{nb_livre_current_year_lus} livres lus",
+        f"{nb_livre_current_year_lus} livres lus<br> {ratio_lu_current}%",
         f"{nb_auteurs_current_year} auteurs<br> {ratio_auteurs_current_year} % auteurs / livres<br>{nb_auteurs_current_year_only} nouveaux auteurs",
-        'D',
-        'E',
-        'F'
-    ],
-    comparison_year: [
-        f"{nb_livre_comparison_year} livres entammés",
-        f"{nb_livre_comparison_year_lus} livres lus",
-        f"{nb_auteurs_comparison_year}<br>{ratio_auteurs_comparison_year}%<br>{nb_auteurs_comparison_year_only} auteurs uniques",
-        4,
-        5,
-        6
+        f"{nb_page_current_year} pages lues <br>{nb_page_moyen_current_year} pages/livre",
+        f"{round(temps_lecture_current_year)}h de lecture <br>soit en moyenne {round(temp_lecture_par_jour*60)} min/jour",
+
     ]
+
 }
 
 df = pd.DataFrame(data)
@@ -108,8 +133,8 @@ html_table = df.style.set_table_styles([
     {
         'selector': 'table, th, td',
         'props': [
-            ('border', '0px'),  # Supprime les bordures
-            ('padding', '4px 10px')  # Ajoute un peu de padding pour la lisibilité
+            ('border', '0px'), 
+            ('padding', '10px 100px') 
         ]
     }
 ]).hide(axis="index").to_html()
