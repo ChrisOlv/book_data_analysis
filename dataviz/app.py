@@ -44,10 +44,10 @@ df_book_updated, df_book_paper, df_stat = load_data()
 
 # title
 # dashboard title
-st.title("📚 Book data analysis")
-st.subheader("Logs analysis from KO e-reader")
-st.markdown("""This dashboard presents an analysis of e-book reading data.
-            The data comes from the reading logs of an e-reader using Ko-reader.
+st.title("📚 Book Data Analysis")
+st.subheader("Exploring my KO e-reader reading stats")
+st.markdown("""From page flips to patterns: diving into my reading journey with KO-reader. 
+Every session, every book, every page, now visualized.
 
             """)
 
@@ -113,7 +113,7 @@ fig0 = px.bar(category_counts_sorted,
              x='nombre de livre', 
              y='Catégorie',
              orientation='h',  # 'h' indique un bar chart horizontal
-             title='Number of books by category',
+             title='Books by Genre',
              labels={'nombre de livre': 'Number of books', 'Catégorie': ''},
              text_auto=True
              
@@ -125,7 +125,15 @@ fig0.update_layout(xaxis=dict(
         showline=False,
         title=''               # Masquer le nom de l'axe des x
          # Masquer la ligne de l'axe des x
-    )
+    ),
+    title=dict(
+        text='Books by Genre',  # Titre
+        x=0.5,                        # Centrer horizontalement
+        xanchor='center',
+        yanchor='top',
+        pad=dict(t=5, b=0)            # Réduire l'espace au-dessus et en dessous du titre
+    ),
+    margin=dict(t=50, l=20, r=20, b=20), 
 )
 
 # nombre de livres lus par mois
@@ -150,7 +158,7 @@ fig1 = px.bar(books_per_month,
               x='nombre de livres', 
               y='month',
               orientation='h',
-              title='Number of books read per month',
+              title='Books Read per Month',
               labels={'nombre de livres': 'Nombre de livres', 'month': 'Month'},
               text='nombre de livres',
               text_auto=True
@@ -177,12 +185,12 @@ fig1.update_layout(
 # compter le temps en minute par mois
 time_per_month = df_book_updated.groupby(['month', 'month_num'])['temps passé sur le livre en heure'].sum().reset_index(name='Temps de lecture en heure').round(0)
 books_per_month = books_per_month.sort_values(by='month_num',ascending=True)
-# Créer un graphique à barres horizontal
+# Bar chart
 fig2 = px.bar(time_per_month,
               x='Temps de lecture en heure', 
               y='month',
               orientation='h',
-              title='Time of reading in hours',
+              title='Monthly Reading Hours',
               labels={'Temps de lecture en heure': 'Hours of reading', 'month': 'Month'},
               text='Temps de lecture en heure',
               text_auto=True
@@ -196,12 +204,20 @@ fig2.update_traces(textposition="inside",
                 )
 
 fig2.update_layout(
-    yaxis=dict(categoryorder="array", categoryarray=mois_ordres,autorange="reversed"),  # S'assurer que les mois sont bien triés
+    yaxis=dict(categoryorder="array", categoryarray=mois_ordres,autorange="reversed",title=""),  # S'assurer que les mois sont bien triés
     xaxis=dict(
         showticklabels=False,  # Masquer les étiquettes de l'axe des x
         zeroline=False,        # Masquer la ligne zéro de l'axe des x
         showline=False,
-        title=''),               # Masquer le nom de l'axe des x
+        title=''),
+    title=dict(
+        text='Monthly Reading Hours',  # Titre
+        x=0.5,                        # Centrer horizontalement
+        xanchor='center',
+        yanchor='top',
+        pad=dict(t=5, b=0)            # Réduire l'espace au-dessus et en dessous du titre
+    ),
+    margin=dict(t=50, l=20, r=20, b=20),               # Masquer le nom de l'axe des x
         bargap=0.1,  # Ajouter de l'espace entre les barres
     )
 
@@ -209,10 +225,9 @@ fig2.update_layout(
 # le temps de lecture max
 temps_maxi = df_book_updated[df_book_updated["temps passé sur le livre en heure"] == df_book_updated["temps passé sur le livre en heure"].max()]
 # prisme livre
-titre_max_temps_lecture = df_book_updated[df_book_updated["temps passé sur le livre en heure"] == df_book_updated["temps passé sur le livre en heure"].max()]["Titre"].values[0]
-auteur_max_temps_lecture = df_book_updated[df_book_updated["temps passé sur le livre en heure"] == df_book_updated["temps passé sur le livre en heure"].max()]["Auteurs"].values[0]
+titre_max_temps_lecture = df_book_updated[df_book_updated["temps passé sur le livre en heure"] == df_book_updated["temps passé sur le livre en heure"].max()]["Titre"].str.title().values[0].split('-')[0].strip()
+auteur_max_temps_lecture = df_book_updated[df_book_updated["temps passé sur le livre en heure"] == df_book_updated["temps passé sur le livre en heure"].max()]["Auteurs"].str.title().values[0]
 temps_max_lecture = df_book_updated["temps passé sur le livre en heure"].max()
-# print(f"Livre le plus long à lire : {titre_max_temps_lecture} de {auteur_max_temps_lecture} : {temps_max_lecture}")
 
 # # 2/ PLUS RÉGULIER
 # # Compter le nombre de lignes où "jours de lecture effectifs (jl)" est égal à "Durée lecture (j)"
@@ -228,14 +243,14 @@ temps_max_lecture = df_book_updated["temps passé sur le livre en heure"].max()
 livre_rapide = df_book_updated[df_book_updated["temps passé sur le livre en minute"] > 35]
 livre_rapide = livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]
 
-titre_livre_rapide = livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]["Titre"].values[0]
-auteur_livre_rapide =livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]["Auteurs"].values[0]
+titre_livre_rapide = livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]["Titre"].str.title().values[0]
+auteur_livre_rapide =livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]["Auteurs"].str.title().values[0]
 vitesse_livre_rapide =livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]["pages lues à la minute"].values[0].round(1)
 
 # 4/ PLUS ADDICTIF
 livre_addict = df_book_updated[df_book_updated["minutes de lecture/jl"] == df_book_updated["minutes de lecture/jl"].max()]
-titre_livre_addict = livre_addict["Titre"].values[0]
-auteur_livre_addict = livre_addict["Auteurs"].values[0]
+titre_livre_addict = livre_addict["Titre"].str.title().values[0]
+auteur_livre_addict = livre_addict["Auteurs"].str.title().values[0]
 minutes_livre_addict = livre_addict["minutes de lecture/jl"].values[0]
 
 # 5/ AUTEURS ET LIVRES
@@ -255,7 +270,7 @@ nb_auteurs_lus_papier = df_book_paper["Auteurs"].nunique()
 
 df_stat['Date de lecture'] = pd.to_datetime(df_stat['date lecture'], format="%Y-%m-%d")
 df_stat['day_of_week'] = df_stat['Date de lecture'].dt.day_name()
-books_per_day_week = df_stat.groupby('day_of_week').size().reset_index(name='hours of reading')
+books_per_day_week = df_stat.groupby('day_of_week')['Temps de lecture en heure'].sum().round(0).reset_index(name='hours of reading')
 # Trier par ordre des jours de la semaine lundi 1, mardi 2, etc.
 days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 books_per_day_week['day_of_week'] = pd.Categorical(books_per_day_week['day_of_week'], categories=days_order, ordered=True)
@@ -265,7 +280,7 @@ fig3 = px.bar(books_per_day_week,
               y='day_of_week',
               x='hours of reading',
               orientation='h',
-              title='hours of reading by day of the week',
+              title='Weekly Reading Hours',
               labels={'hours of reading': 'hours of reading', 'day_of_week': ''},
               text='hours of reading',
               text_auto=True
@@ -273,14 +288,22 @@ fig3 = px.bar(books_per_day_week,
 fig3.update_traces(textposition="inside",cliponaxis=False,)
 fig3.update_layout(
     xaxis=dict(
-        showticklabels=True,  # Masquer les étiquettes de l'axe des x
+        showticklabels=False,  # Masquer les étiquettes de l'axe des x
         zeroline=False,        # Masquer la ligne zéro de l'axe des x
         showline=False,
         title='',
     ),
     yaxis=dict(
         categoryorder="array", categoryarray=days_order,autorange="reversed" # utiliser l'ordre des jours manuel
-        )
+        ),
+    title=dict(
+        text='Weekly Reading Hours',  # Titre
+        x=0.5,                        # Centrer horizontalement
+        xanchor='center',
+        yanchor='top',
+        pad=dict(t=5, b=0)            # Réduire l'espace au-dessus et en dessous du titre
+    ),
+    margin=dict(t=50, l=20, r=20, b=20)              # Masquer le nom de l'axe des x
 )
 
 # chart4,chart5 = st.columns(2)
@@ -389,15 +412,17 @@ ax.grid(axis='y', linestyle='--', alpha=0.8)
 kpi1, kpi2, kpi3, kpi4,kpi5 = st.columns(5)
 text1, text2, text3, text4,text5 = st.columns(5)
 table = st.columns(1)
-chart1, chart2,chart4 = st.columns(3)
-chart6,chart7,chart8 = st.columns(3)
+chart1, chart4,chart6 = st.columns(3)
+chart2,chart7,chart8 = st.columns(3)
+# chart1, chart2,chart4 = st.columns(3)
+# chart6,chart7,chart8 = st.columns(3)
 chart3 = st.columns(1)
 
 # with chart7:
 #     st.markdown("### Reading by time of day")
 #     st.write(fig4)
 with chart6:
-    st.markdown("### Reading by day of the week")
+    # st.markdown("### Reading by day of the week")
     fig = fig3
     st.write(fig)
 with chart8:
@@ -408,64 +433,96 @@ with chart8:
 
 # 1/ plus longue lecture 
 kpi1.metric(
-    label="# Longest Reading",
+    label="# Marathon Read (hours)",
     value=round(temps_max_lecture),
     help=("hours")
     )
 
-text1.markdown(titre_max_temps_lecture+" de "+auteur_max_temps_lecture)
+# stylisation moderne du titre et de l'auteur
+text1.markdown(f"""
+<div style= line-height: 1.2;">
+    <div style="font-size:14px; font-weight:600;color:#555;">{titre_max_temps_lecture}</div>
+    <div style="font-size:12px; color:#555;">{auteur_max_temps_lecture}</div>
+</div>
+""", unsafe_allow_html=True)
+
+# old text
+# text1.markdown(titre_max_temps_lecture+" de "+auteur_max_temps_lecture)
 
 # 2/ plus rapide
 kpi2.metric(
-    label="# Fastest Reading",
+    label="# Page turner (p/min)",
     value=vitesse_livre_rapide,
     help=("pages read per minute")
     )
-text2.markdown(titre_livre_rapide+" de "+auteur_livre_rapide)
+# stylisation moderne du titre et de l'auteur
+text2.markdown(f"""
+<div style= line-height: 1.2;">
+    <div style="font-size:14px; font-weight:600;color:#555;">{titre_livre_rapide}</div>
+    <div style="font-size:12px; color:#555;">{auteur_livre_rapide}</div>
+</div>
+""", unsafe_allow_html=True)
+
+# text2.markdown(titre_livre_rapide+" de "+auteur_livre_rapide)
 
 
 # 3/ plus addictif
 kpi3.metric(
-    label="# Most Addictive Reading",
+    label="# Daily Obsessed (min/day)",
     value=round(minutes_livre_addict),
     help=("reading minutes per day")
     )
-text3.markdown(titre_livre_addict+" de "+auteur_livre_addict)
+
+text3.markdown(f"""
+<div style= line-height: 1.2;">
+    <div style="font-size:14px; font-weight:600;color:#555;">{titre_livre_addict}</div>
+    <div style="font-size:12px; color:#555;">{auteur_livre_addict}</div>
+</div>
+""", unsafe_allow_html=True)
+# text3.markdown(titre_livre_addict+" de "+auteur_livre_addict)
 
 #4/ auteurs et livres
 kpi4.metric(
     label="# e-Books Read",
     value=nb_livres_lus
     )
-text4.markdown(f"by {nb_auteurs_lus}  different authors")
+
+text4.markdown(f"""
+<div style= line-height: 1.2;">
+    <div style="font-size:14px; font-weight:600;color:#555;">by {nb_auteurs_lus}  different authors</div>
+
+</div>
+""", unsafe_allow_html=True)
+# text4.markdown(f"by {nb_auteurs_lus}  different authors")
+
 
 kpi5.metric(
     label="# paper Books Read",
     value=nb_livres_lus_papier
     )
-text5.markdown(f"by {nb_auteurs_lus_papier}  different authors")
+text5.markdown(f"""
+<div style= line-height: 1.2;">
+    <div style="font-size:14px; font-weight:600;color:#555;">by {nb_auteurs_lus_papier}  different authors</div>
+
+</div>
+""", unsafe_allow_html=True)
+# text5.markdown(f"by {nb_auteurs_lus_papier}  different authors")
 
 st.markdown("## Book table")
 
 with chart1:
-    st.markdown("### Reading by Category")
+    # st.markdown("### Reading by Category")
     fig = fig0
     st.write(fig)
 
-# with chart2:
-#     st.markdown("### Lecture par mois")
-#     fig = fig1
-#     st.write(fig)
-
-
 # chart2 = st.container()
 with chart2:
-    st.markdown("### Reading by Month")
+    # st.markdown("### Reading by Month")
     st.plotly_chart(fig1) 
 
 # chart2 = st.container()
 with chart4:
-    st.markdown("### Time of Reading by Month")
+    # st.markdown("### Time of Reading by Month")
     st.plotly_chart(fig2) 
 # 5/ table
 
@@ -971,28 +1028,44 @@ session_plot_droped['heure_debut_sec'] = session_plot_droped['heure de début_mi
 session_plot_droped['heure_fin_sec'] = session_plot_droped['heure de fin'].dt.time.apply(time_to_seconds)
 
 
-# Plotting
+# # Plotting
+
+
 plt.figure(figsize=(18, 10))
+
 for idx, row in session_plot_droped.iterrows():
     plt.plot([row['heure de début_min'].date(), row['heure de début_min'].date()], 
              [row['heure_debut_sec'], row['heure_fin_sec']], 
              marker='o')
 
-# Configuration des étiquettes et des limites de l'axe des Y
+# Axe Y : heures
 ticks = [i * 3600 for i in range(24)]
 labels = [f'{i:02d}:00' for i in range(24)]
 plt.yticks(ticks, labels)
 plt.ylim(0, 24 * 3600 - 1)
-
-plt.title("Each colored dot represent a reading session interval")
-# sous titre avec une description 
-plt.suptitle(f'Reading sessions in {année_plot}', y=1, fontsize=16)
-plt.xlabel('Date')
 plt.ylabel('Hour (HH:MM)')
-plt.xticks(rotation=45)
+
+# Axe X : tous les mois, labels horizontaux
+session_plot_droped['month'] = session_plot_droped['heure de début_min'].dt.strftime('%b')
+months_order = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 
+                'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+
+# Créer un mapping pour que chaque mois apparaisse
+month_positions = session_plot_droped.groupby('month')['heure de début_min'].min().reindex(months_order)
+plt.xticks(ticks=month_positions.values, labels=month_positions.index, rotation=0)  # rotation=0 → horizontal
+
+plt.xlabel('')  # Masquer le titre de l'axe X
+
+# Titres
+plt.title("Each colored dot represents a reading session interval")
+plt.suptitle(f'Reading sessions in {année_plot}', y=1, fontsize=16)
+
 plt.grid(True)
 plt.tight_layout()
 plt.show()
+
+
+#
 
 
 st.pyplot(plt)
