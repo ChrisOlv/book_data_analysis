@@ -1,6 +1,0 @@
-github heatmap : https://builtin.com/data-science/github-contribution-plot
-with this lib : https://pythonhosted.org/calmap/
-
-dashboard from reddit side projet : 
-https://www.reddit.com/r/SideProject/comments/1gzc9us/1000000_visits_5000_monthly_revenue_from_world_of/
-https://www.reddit.com/r/SideProject/comments/1gyv68e/built_an_app_that_can_generate_detailed/
