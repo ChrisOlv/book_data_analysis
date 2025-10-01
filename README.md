@@ -1,58 +1,23 @@
-book_data_analysis
+# 📊 My Reading Analytics Dashboard
 
-![Inspiration Image](1.inspirations/Sans%20titre.png)
+As a **Lead Data Analyst / Analytics Engineer**, I love turning raw data into stories. This project is a playground where I explore my own reading habits — the books I start, the books I finish, my reading speed, and daily reading patterns — using Python, Streamlit, and interactive visualizations.  
 
-# Description
-## Python script
-"script_1_update" is the main script.
-Main steps : 
-1. get info from the sqlite db
-2. prepare and clean data
-3. generate categories / sub categories, year of release from gpt4o llm
-4. generate 3 parquet files into data_source_from_python : df_books, df_stat, df_book_updated 
+Think of it as a **portfolio piece** and a **mini data story**: some charts are polished, others are experiments that didn’t fully work out. The goal is to showcase **technical skills**, **analytical thinking**, and **creative storytelling** with real, messy data.  
 
-## Streamlit app.py
-* App.py is the main Python code to display interactive dataviz.
-* It takes the 3 files (df_book_updated, df_stat, df_book_paper) and vizualise them into multiples graphs.
-* The streamlit page is interactive, you can use the left pannel to interact with data (date, authors, status ...)
+---
 
-# tuto
+## What You’ll See
 
-## tuto install or update data :
-1. paste the statistics.sqlite3 file from your KO e-reader into the folder "sqlite/update"
-2. execute the script (it handle the first install and the update, with incremental update).
+- **Key Metrics at a Glance** – Total reading sessions, average session duration, and more.  
+- **Timeline of Reading** – Start and finish dates for every book, color-coded by category.  
+- **Daily Reading Sessions** – Each session mapped by hour, visualizing time-of-day patterns.  
+- **Reading Speed Analysis** – Interactive scatter plot of reading speed vs. total time per book.  
+- **Year-to-Year Comparison** – How my reading evolves over time: books, authors, pages, and daily minutes.  
 
-## vizualize data : 
-streamlit run app2.py
-enjoy
+---
 
-# OLD stuff
-The following items are no longer needed. They are kept here for history.
+## Why This Matters
 
-## Power BI : 
-no longer used
-### installation
-#### path
-relative path (book.xls & sqlite3) : the relative location of the local sources. Don't touch this. --> Technically, there is no need of these parameters, we can directly type the relative path in the query source.
+Beyond just charts, this dashboard demonstrates how to **turn data into insight**. I tackle challenges like handling outliers, filtering data, creating interactive visuals, and blending static and dynamic charts — exactly the kind of problems a Lead Data Analyst or Analytics Engineer solves daily.  
 
-## database v3
-### workflow : 
-1. mise à jours du sqlite3
-2. data warehouse : 
-script python qui s'active à la mise à jour du fichier sqlite3: 
-récupération des tables
-préparation
-génération de la colonne genAI
-extraction des tables en .parquet
-3. power bi est connecté à ces tables
-4. mise à jour de power BI en local lors de la consultation
-
-#### category
-1. faire un extract de kobo analysis / liste des livres
-2. run le script "ajout_category".py
-    Ce script ajoute une colonne category et utilise gpt4o pour générer la categorie et sous categorie du livre
-3. l'export se retrouve dans "export xls"
-4. dans kobo-analysis, la table liste_livre_category vient enrichir la table liste_livre
-
-# credit
-Dataviz style : inspired by https://erdavis.com/
+It’s a **personal project** that highlights my ability to combine **technical expertise** with **data storytelling**, making insights accessible and engaging. Perfect for a portfolio, GitHub repo, or a Substack article showcasing hands-on analytics skills.
