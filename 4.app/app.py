@@ -233,7 +233,14 @@ fig2.update_layout(
 temps_maxi = df_book_updated[df_book_updated["temps passé sur le livre en heure"] == df_book_updated["temps passé sur le livre en heure"].max()]
 # prisme livre
 titre_max_temps_lecture = df_book_updated[df_book_updated["temps passé sur le livre en heure"] == df_book_updated["temps passé sur le livre en heure"].max()]["Titre"].str.title().values[0].split('-')[0].strip()
-auteur_max_temps_lecture = df_book_updated[df_book_updated["temps passé sur le livre en heure"] == df_book_updated["temps passé sur le livre en heure"].max()]["Auteurs"].str.title().values[0]
+# auteur_max_temps_lecture = df_book_updated[df_book_updated["temps passé sur le livre en heure"] == df_book_updated["temps passé sur le livre en heure"].max()]["Auteurs"].str.title().values[0]
+auteur_max_temps_lecture = " ".join(
+    df_book_updated[df_book_updated["temps passé sur le livre en heure"] 
+                    == df_book_updated["temps passé sur le livre en heure"].max()]["Auteurs"]
+    .str.title()
+    .values[0]
+    .split()[:3]
+)
 temps_max_lecture = df_book_updated["temps passé sur le livre en heure"].max()
 
 # # 2/ PLUS RÉGULIER
@@ -251,7 +258,16 @@ livre_rapide = df_book_updated[df_book_updated["temps passé sur le livre en min
 livre_rapide = livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]
 
 titre_livre_rapide = livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]["Titre"].str.title().values[0]
-auteur_livre_rapide =livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]["Auteurs"].str.title().values[0]
+# auteur_livre_rapide =livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]["Auteurs"].str.title().values[0]
+auteur_livre_rapide = " ".join(
+    livre_rapide[livre_rapide["pages lues à la minute"] == 
+                 livre_rapide["pages lues à la minute"].max()]["Auteurs"]
+    .str.title()
+    .values[0]
+    .split()[:3]
+)
+
+
 vitesse_livre_rapide =livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]["pages lues à la minute"].values[0].round(1)
 
 # 4/ PLUS ADDICTIF
@@ -395,7 +411,11 @@ tdf_books_plot = df_book_updated.copy()
 
 # Recalculer la vitesse de lecture (pages/minute)
 tdf_books_plot['vitesse_lecture'] = tdf_books_plot['# pages lues'] / tdf_books_plot['temps passé sur le livre en minute']
-
+# Remove outliers
+tdf_books_plot = tdf_books_plot[
+    (tdf_books_plot['vitesse_lecture'] < 6) &
+    (tdf_books_plot['temps passé sur le livre en minute'] > 35)
+]
 # Scatter plot : Temps passé vs Vitesse de lecture
 fig4 = px.scatter(
     tdf_books_plot,
