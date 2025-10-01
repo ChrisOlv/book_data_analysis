@@ -20,4 +20,4 @@ Think of it as a **portfolio piece** and a **mini data story**: some charts are 
 
 Beyond just charts, this dashboard demonstrates how to **turn data into insight**. I tackle challenges like handling outliers, filtering data, creating interactive visuals, and blending static and dynamic charts — exactly the kind of problems a Lead Data Analyst or Analytics Engineer solves daily.  
 
-It’s a **personal project** that highlights my ability to combine **technical expertise** with **data storytelling**, making insights accessible and engaging. Perfect for a portfolio, GitHub repo, or a Substack article showcasing hands-on analytics skills.
+It’s a **personal project** that highlights my ability to combine **technical expertise** with **data storytelling**, making insights accessible and engaging. 
