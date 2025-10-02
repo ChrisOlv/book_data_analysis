@@ -40,9 +40,9 @@ def load_data():
     
     # date conversion
     df_book_updated['Date de lecture'] = pd.to_datetime(df_book_updated['Date de lecture'], format="%Y-%m-%dT%H:%M:%S.%fZ")
-    df_book_paper['date de lecture'] = pd.to_datetime(df_book_paper['date de lecture'], format='%d/%m/%Y')
-    
-    
+    # df_book_paper['date de lecture'] = pd.to_datetime(df_book_paper['date de lecture'], format='%d/%m/%Y')
+    df_book_paper['date de lecture'] = pd.to_datetime(df_book_paper['date de lecture'],dayfirst=True,errors="coerce")
+    df_book_paper = df_book_paper.dropna(subset=['date de lecture'])
     return df_book_updated, df_book_paper, df_stat
 
 df_book_updated, df_book_paper, df_stat = load_data()
@@ -61,7 +61,7 @@ Every session, every book, every page, now visualized.
 # Sidebar : configuration des filtres
 with st.sidebar:
     st.header("Chart parameters ⚙️")
-    filter_annee = st.multiselect('Year', ['2023', '2024', '2025', "last 12 months"], default=['last 12 months'])
+    filter_annee = st.multiselect('Year', ['2023', '2024', '2025', "last 12 months"], default=['2025'])
     livre_termine = st.radio("Reading status", options=["read", "unfinished", "read + unfinished"])
     filter_auteur = st.multiselect('Author', df_book_updated['Auteurs'].unique())
     filter_title = st.multiselect('Title', df_book_updated['Titre'].unique())
@@ -87,6 +87,9 @@ def filter_by_year(df, date_col, filter_val):
 df_book_updated = filter_by_year(df_book_updated, 'Date de lecture', filter_annee)
 df_book_paper = filter_by_year(df_book_paper, 'date de lecture', filter_annee)
 df_stat = filter_by_year(df_stat, 'date lecture', filter_annee)
+
+
+
 
 
 # Filtrage sur le statut de lecture
