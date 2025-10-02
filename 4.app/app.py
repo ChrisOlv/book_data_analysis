@@ -61,7 +61,7 @@ Every session, every book, every page, now visualized.
 # Sidebar : configuration des filtres
 with st.sidebar:
     st.header("Chart parameters ⚙️")
-    filter_annee = st.multiselect('Year', ['2023', '2024', '2025', "last 12 months"], default=['2025'])
+    filter_annee = st.multiselect('Year', ['2023', '2024', '2025', "last 12 months"], default=['2024'])
     livre_termine = st.radio("Reading status", options=["read", "unfinished", "read + unfinished"])
     filter_auteur = st.multiselect('Author', df_book_updated['Auteurs'].unique())
     filter_title = st.multiselect('Title', df_book_updated['Titre'].unique())
@@ -434,6 +434,20 @@ fig4 = px.scatter(
     title='Reading Speed vs Total Time Spent per Book',
     size_max=30,
     color_discrete_sequence=px.colors.qualitative.Set2  
+)
+
+
+
+# Ajoute le hovertemplate
+fig4.update_traces(
+    hovertemplate=
+    "<b>Title:</b> %{customdata[0]}<br>" +
+    "<b>Author:</b> %{customdata[1]}<br>" +
+    "<b>Genre:</b> %{customdata[2]}<br>" +
+    "<b>Reading days:</b> %{customdata[4]}<br>" +
+    "<b>Speed:</b> %{y:.2f} pages/min<br>" +
+    "<b>Time spent:</b> %{x} min<extra></extra>",
+    customdata=tdf_books_plot[['Titre','Auteurs','category2','série','Durée lecture (j)']].values
 )
 
 # Layout
