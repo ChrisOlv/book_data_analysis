@@ -62,6 +62,11 @@ print("Nombre de lignes de df_page_stat_data : ", df_page_stat_data.shape[0])
 conn.close()
 
 # enrichissement du fichier source
+# drop columns et authors
+df_book_new = df_book_new.drop(columns=['highlights', 'md5'])
+df_book_new = df_book_new[df_book_new['title'] != "ERROR: Error reading EPUB format"]
+df_book_new = df_book_new[df_book_new['authors'] != "Michael Joseph Ferguson"]
+
 df_book_new['oeuvre'] = df_book_new[['title', 'authors']].astype(str).agg(' - '.join, axis=1) # sera utilisé pour la génération de catégorie et d'année de publication
 df_book_new['id long'] = df_book_new['id'].apply(lambda x: str(x).zfill(5))
 # renaming des colonnes
@@ -84,19 +89,14 @@ df_book_new['Auteurs courts'] = (
     .apply(lambda x: ' '.join(x[:2]))  # Garde les deux premiers mots
 )
 
-# ajout  colonne "format" = "ebook"
-df_book_new['format'] = "ebook"
-# ajout d'une colonne categorie vide et first published date
-df_book_new['First published date'] = ''
-df_book_new['categorie'] = ''
-df_book_new = df_book_new.drop(columns=['highlights', 'md5'])
-
+# ajout  colonnes
+df_book_new[['format', 'First published date', 'categorie']] = ['ebook', '', '']
 print("chargement du fichier sqlite terminé")
 print("="*80)
 
 # 2. df_book_stale
 
-# check si le fichier "data_sources_from_python/df_book.parquet" existe
+# check si le fichier "df_book.parquet" existe
 # si oui, le charger dans df_book_stale
 # sinon on en créé un nouveau.
 # permet de ne pas générer toutes les catégories et année de release à chaque fois
@@ -121,7 +121,7 @@ if parquet_path.exists():
     # Colonnes à mettre à jour
     update_columns = ['notes', 'Date dernière ouverture', 'total_read_time', 'total Nbr de pages lues']
 
-    # Faire la jointure sur 'id' pour obtenir les lignes correspondantes de df_fake
+    # jointure sur 'id' pour obtenir les lignes correspondantes de df_fake
     df_updated = df_book_stale_concatenated.merge(df_book_new[['id'] + update_columns], on='id', how='left', suffixes=('', '_fake'))
 
     # Remplacer les valeurs existantes par les valeurs de df_fake si elles existent
@@ -314,39 +314,38 @@ else:
 
 # nettoyage et preparation de df_stat 
 
-# changer le nom de la coonne duration pour "Temps passé sur la page en seconde"
-df_page_stat_data.rename(columns={"duration":"Temps passé sur la page en seconde"},inplace=True)
-# convertir la colonne en date time
-df_page_stat_data.rename(columns={"start_time":"heure de début"},inplace=True)
+# RENAME
+
+df_page_stat_data.rename(columns={
+    "duration": "Temps passé sur la page en seconde",
+    "start_time": "heure de début"
+}, inplace=True)
 
 
-
-
+# CONVERT
 df_page_stat_data['heure de début'] = pd.to_datetime(df_page_stat_data['heure de début'], unit='s')
-# créé une colonne "id long" qui reprend la colonne "id_book" en la passant sur 5 chiffres. Les premiers chiffres doivent etre des "0". par exemple "68" devient "00068"
 df_page_stat_data['id_long'] = df_page_stat_data['id_book'].apply(lambda x: str(x).zfill(5))
-# crée une colonne "Temps de lecture en minute" et "Temps de lecture en heure" qui utilise la colonne "Temps passé sur la page en seconde", divisé par 60 puis encore par 603
+
+
+# CREATE COLUMNS
 df_page_stat_data['Temps de lecture en minute'] = df_page_stat_data['Temps passé sur la page en seconde'] / 60
 df_page_stat_data['Temps de lecture en heure'] = df_page_stat_data['Temps de lecture en minute'] / 60
-# ajoute une colonne "date lecture" qui reprend la date de la colonne "heure de début"
 df_page_stat_data['date lecture'] = df_page_stat_data['heure de début'].dt.date
 
 
-# supprimer les lignes où date lecture est égale à 2012-05-01 (erreur ereader qui a reset son horloge)
+# FIX EREADER ERROR
 df_page_stat_data = df_page_stat_data[df_page_stat_data['date lecture'] != pd.to_datetime('2012-05-01').date()]
 
-# ajoute une colonne "Heure de début de lecture" qui reprend l'heure de la colonne "heure de début" 
+# EXTRACT AND HOUR CALCULATION
 df_page_stat_data['Heure de début de lecture'] = df_page_stat_data['heure de début'].dt.time
-# ajoute les colonnes : Heure,	Heure en décimal, Jour Précédent. basée sur la colonne heure de début 
 df_page_stat_data['Heure'] = df_page_stat_data['heure de début'].dt.hour
 df_page_stat_data['Heure en décimal'] = df_page_stat_data['Heure'] + df_page_stat_data['heure de début'].dt.minute / 60
 df_page_stat_data['Jour Précédent'] = (df_page_stat_data['heure de début'] - pd.Timedelta(days=1)).dt.date
-# ajoute une colonne "Est Consécutif" 
 df_page_stat_data['Est Consécutif'] = (df_page_stat_data['date lecture'].shift(1) == df_page_stat_data['date lecture']) | (df_page_stat_data['date lecture'].shift(1) == df_page_stat_data['date lecture'] - pd.Timedelta(days=1))
 df_page_stat_data['date de fin de lecture'] = df_page_stat_data.groupby('id_book')['date lecture'].transform('max')
 
 
-# Exporter la tables vers un fichier Parquet
+# EXPORT
 df_stat = df_page_stat_data
 
 
@@ -364,34 +363,31 @@ print("Préparation df pour dataviz en cours")
 warnings.filterwarnings('ignore')
 
 
-# Assurez-vous que la colonne "date lecture" est bien de type datetime
+# CHECK DATETIME
 df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture']) 
 
-# Grouper df_stat par 'id_book' et calculer les valeurs souhaitées
+# GROUP BY
 df_stat_grouped = df_stat.groupby('id_book').agg({
     'Temps passé sur la page en seconde': 'sum',
     'date lecture': ['nunique', 'min', 'max']
 }).reset_index()
 
-# Aplatir les colonnes multi-niveaux résultantes après l'aggrégation
 df_stat_grouped.columns = ['id', 'total_temps_sur_page_seconde', 'nb_dates_lecture_distinctes', 'start_date', 'end_date']
 
 # Calculer la durée de l'intervalle de lecture
 df_stat_grouped['intervalle_lecture_en_jour'] = 1 +(df_stat_grouped['end_date'] - df_stat_grouped['start_date']).dt.days
 
-# Fusionner les résultats avec df_book
+# JOIN with df_book
 df_book_updated = df_book.merge(df_stat_grouped, how='left', on='id')
 
-# Remplacer les valeurs NaN pour les colonnes nouvellement calculées, si nécessaire
+# FILL NA
 df_book_updated['total_temps_sur_page_seconde'].fillna(0, inplace=True)
 df_book_updated['nb_dates_lecture_distinctes'].fillna(0, inplace=True)
-df_book_updated['intervalle_lecture_en_jour'].fillna(0, inplace=True)
+df_book_updated['intervalle_lecture_en_jour'].fillna(0, inplace=True) 
 
-# nombre de page lue par jour de lecture (total Nbr de pages lues / nb_dates_lecture_distinctes), arrondi à 2 chiffres après la virgule
+# ADD COLUMNS : 
 
 df_book_updated['nb_pages_lues_par_jour_de_lecture'] = (df_book_updated['total Nbr de pages lues'] / df_book_updated['nb_dates_lecture_distinctes']).round(1)
-
-# heure de lecure par jour de lecture
 df_book_updated['heure_lecture_par_jour_de_lecture'] = (df_book_updated['total_temps_sur_page_seconde'] / df_book_updated['nb_dates_lecture_distinctes'] / 3600).round(2)
 df_book_updated['minutes_lecture_par_jour_de_lecture'] = (df_book_updated['total_temps_sur_page_seconde'] / df_book_updated['nb_dates_lecture_distinctes'] / 60).round(1)
 
@@ -418,7 +414,6 @@ df_book_updated = df_book_updated.sort_values(by='Date dernière ouverture', asc
 
 # ajoute une colonne "pourcent_lu" : "total Nbr de pages lues du livre" / "page"
 df_book_updated['pourcent_lu'] = (df_book_updated['total Nbr de pages lues'] / df_book_updated['page'] * 100).round(0)
-
 df_book_updated["temps passé sur le livre en minute"] = (df_book_updated["total_temps_sur_page_seconde"] / 60).round(2)
 df_book_updated["temps passé sur le livre en heure"] = (df_book_updated["total_temps_sur_page_seconde"] / 3600).round(2)
 
@@ -429,8 +424,6 @@ df_book_updated[['série', 'numéro_série']] = df_book_updated['Série'].str.sp
 # changer le format de start_date et end_date en yyyy-mm-dd
 df_book_updated['start_date'] = df_book_updated['start_date'].dt.strftime('%Y-%m-%d') 
 df_book_updated['end_date'] = df_book_updated['end_date'].dt.strftime('%Y-%m-%d')
-
-
 
 
 
@@ -493,11 +486,7 @@ df_book_updated.rename(columns={
 
     }, inplace=True)
 
-# drop ligne de df_book_update ou titre = "ERROR: Error reading EPUB format	
-auteurs_a_exclure = ["Tamara Rosier", "Michael Joseph","Michael Joseph Ferguson"] 
-titres_a_exclure = ["ERROR: Error reading EPUB format"]
-df_book_updated = df_book_updated[~df_book_updated['Auteurs'].isin(auteurs_a_exclure)]
-df_book_updated = df_book_updated[~df_book_updated['Titre'].isin(titres_a_exclure)]
+
 
 
 # merge les titres sur df_stats
