@@ -487,7 +487,7 @@ df_stat = df_stat.merge(df_book_updated[['id', 'Titre', 'Auteurs']], left_on='id
 parquet_path_updated = Path(__file__).parent.parent.parent / "1.data" / "2.processed" / "df_book_updated.parquet"
 # output des tables dans le dossier sources python
 df_book_updated.to_parquet(parquet_path_updated, engine='pyarrow', index=False)
-df_book_updated.to_excel(Path(__file__).parent.parent.parent / "1.data" / "2.processed" / "df_book_updated.xlsx", index=False)
+# df_book_updated.to_excel(Path(__file__).parent.parent.parent / "1.data" / "2.processed" / "df_book_updated.xlsx", index=False) # excel output for debug 
 df_stat.to_parquet(parquet_stat_path, engine='pyarrow')
 print("Préparation df pour dataviz terminée")
 print("="*80)
