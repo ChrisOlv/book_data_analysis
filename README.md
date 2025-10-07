@@ -25,16 +25,17 @@ The workflow is structured into three main parts:
 
 ## 📂 Repository Structure
 
+```text
 book_data_analysis/
-├─ 1.data/ # Raw and processed data (ignored in Git)
-├─ 3.transformations/ # ETL scripts
-├─ 4.app/ # Streamlit application
-│ ├─ app.py # Main app entry point
-│ └─ pages/ # Extra pages (experiments, prototypes)
+├─ 1.data/             # Raw and processed data
+├─ 3.transformations/   # ETL scripts
+├─ 4.app/              # Streamlit application
+│  ├─ app.py           # Main app entry point
+│  └─ pages/           # Extra pages (experiments, prototypes)
 ├─ README.md
 ├─ .gitignore
 └─ requirements.txt
-
+```
 
 **Note:** All raw or sensitive data files are excluded from this repository. Demo files are provided to allow testing and exploring the app.
 
@@ -79,16 +80,11 @@ Experimentation page: try new ideas without affecting the main app.
 
 ## 📖 Dependencies
 
-Python >= 3.10
-
-pandas
-
-pathlib
-
-Streamlit
-
-Plotly Express
-
+* Python >= 3.10
+* pandas
+* pathlib
+* Streamlit
+* Plotly Express
 (Full list in requirements.txt.)
 
 ## 📌 Notes
@@ -99,10 +95,7 @@ Contributions are welcome! Please follow the guidelines in CONTRIBUTING.md.
 
 ## 🚀 Next Steps
 
-Add unit tests for ETL scripts
-
-Expand Streamlit app with more KPIs
-
-Add automated CI/CD with GitHub Actions
-
-Improve data input workflow (e.g., automatic ingestion from e-readers)
+* Add unit tests for ETL scripts
+* Expand Streamlit app with more KPIs
+* Add automated CI/CD with GitHub Actions
+* Improve data input workflow (e.g., automatic ingestion from e-readers)
