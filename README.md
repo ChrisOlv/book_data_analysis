@@ -81,7 +81,6 @@ If you do not have real data, the app will fallback to demo datasets (*_demo.par
 ![img](5.github/img/image4.png)
 
 
-
 ## 🛠️ Features
 
 Reading analytics: visualize reading duration, speed, and category distribution.
