@@ -1,4 +1,8 @@
 .venv
 dataviz.ipynb
 EDA.ipynb
-1.data\1.raw\paper_audio\paper_audio.xlsx
+paper_audio.xlsx
+1.data/3.archives/sqlite/
+1.data\2.processed\df_book_updated.parquet
+1.data\2.processed\df_book.parquet
+D:\6.dev\book_data_analysis\1.data\2.processed\stats_lecture.parquet

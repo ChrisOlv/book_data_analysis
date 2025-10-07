@@ -18,9 +18,27 @@ import calmap
 os.chdir(os.path.dirname(__file__))
 
 # paths
-df_book_updated_path = Path(__file__).parent.parent / "1.data" / "2.processed" / "df_book_updated.parquet"
-df_stat_path = Path(__file__).parent.parent / "1.data" / "2.processed" / "stats_lecture.parquet"
-book_paper_path = Path(__file__).parent.parent / "1.data"/"1.raw"/"paper_audio" / "paper_audio.xlsx"
+# df_book_updated_path = Path(__file__).parent.parent / "1.data" / "2.processed" / "df_book_updated.parquet"
+# df_stat_path = Path(__file__).parent.parent / "1.data" / "2.processed" / "stats_lecture.parquet"
+
+
+def get_data_path(filename: str, folder="1.data/2.processed") -> Path:
+    base = Path(__file__).parent.parent / folder
+    file = base / filename
+    demo = base / filename.replace(".parquet", "_demo.parquet")
+    return file if file.exists() else demo
+
+df_book_updated_path = get_data_path("df_book_updated.parquet")
+df_stat_path = get_data_path("stats_lecture.parquet")
+
+# excel option
+base_path = Path(__file__).parent.parent / "1.data" / "1.raw" / "paper_audio"
+file_path = base_path / "paper_audio.xlsx"
+demo_path = base_path / "paper_audio_demo.xlsx"
+book_paper_path = file_path if file_path.exists() else demo_path
+
+
+# book_paper_path = Path(__file__).parent.parent / "1.data"/"1.raw"/"paper_audio" / "paper_audio.xlsx"
 
 # page config
 st.set_page_config(
