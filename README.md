@@ -2,6 +2,8 @@
 
 A personal analytics project to explore and visualize my reading habits. This repository combines **Python**, **pandas**, **Streamlit**, and **Parquet-based data processing** to provide insights into books, reading speed, and other statistics.
 
+You can read the full story [on Substack!](https://chrsolv.substack.com/p/i-turned-my-kobo-reading-data-into).
+
 ---
 
 ## 🔍 Overview
