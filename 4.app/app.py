@@ -12,6 +12,7 @@ import numpy as np
 import os 
 from pathlib import Path
 import datetime
+import calmap
 
 # launch the script from anywhere
 os.chdir(os.path.dirname(__file__))
@@ -68,7 +69,7 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
-# Fonction de filtrage par année
+# apply year filter function
 def filter_by_year(df, date_col, filter_val):
     if not filter_val:
         return df
@@ -77,23 +78,18 @@ def filter_by_year(df, date_col, filter_val):
     else:
         return df[df[date_col].dt.year.astype(str).isin(filter_val)]
 
-# Application des filtres par date sur les différents DataFrames
 df_book_updated = filter_by_year(df_book_updated, 'Date de lecture', filter_annee)
 df_book_paper = filter_by_year(df_book_paper, 'date de lecture', filter_annee)
 df_stat = filter_by_year(df_stat, 'date lecture', filter_annee)
 
-
-
-
-
-# Filtrage sur le statut de lecture
+# status filter
 if livre_termine == "read":
     df_book_updated = df_book_updated[df_book_updated['% lu'] == 100]
 elif livre_termine == "unfinished":
     df_book_updated = df_book_updated[df_book_updated['% lu'] != 100]
-# "read + unfinished" ne nécessite pas d'action
 
-# Filtrage par auteur, titre et catégories (en vérifiant que la liste n'est pas vide)
+
+# auteur filter
 if filter_auteur:
     df_book_updated = df_book_updated[df_book_updated['Auteurs'].isin(filter_auteur)]
 if filter_title:
@@ -104,19 +100,19 @@ if filter_category2:
     df_book_updated = df_book_updated[df_book_updated['category2'].isin(filter_category2)]
 
 
-# préparation des dataviz 
+# DATAVIZ PREPARATION 
 
-# 0 / nombre de libres par catégorie : 
+# count category
 category_counts = df_book_updated['Catégorie'].value_counts().reset_index()
 category_counts.columns = ['Catégorie', 'nombre de livre']
 
-# Créer un graphique à barres horizontal
+# Bar chart
 category_counts_sorted = category_counts.sort_values(by='nombre de livre', ascending=True)
 
 fig0 = px.bar(category_counts_sorted,
              x='nombre de livre', 
              y='Catégorie',
-             orientation='h',  # 'h' indique un bar chart horizontal
+             orientation='h',
              title='Books by Genre',
              labels={'nombre de livre': 'Number of books', 'Catégorie': ''},
              text_auto=True
@@ -124,40 +120,36 @@ fig0 = px.bar(category_counts_sorted,
              )
 fig0.update_traces(textposition="inside")
 fig0.update_layout(xaxis=dict(
-        showticklabels=False,  # Masquer les étiquettes de l'axe des x
-        zeroline=False,        # Masquer la ligne zéro de l'axe des x
+        showticklabels=False,  
+        zeroline=False,     
         showline=False,
-        title=''               # Masquer le nom de l'axe des x
-         # Masquer la ligne de l'axe des x
+        title=''  
+
     ),
     title=dict(
-        text='Books by Genre',  # Titre
-        x=0.5,                        # Centrer horizontalement
+        text='Books by Genre',  
+        x=0.5,                        
         xanchor='center',
         yanchor='top',
-        pad=dict(t=5, b=0)            # Réduire l'espace au-dessus et en dessous du titre
+        pad=dict(t=5, b=0)            
     ),
     margin=dict(t=50, l=20, r=20, b=20), 
 )
 
-# nombre de livres lus par mois
-# Convertir la colonne 'end_date' en type datetime
+# count read per month
 df_book_updated['end_date'] = pd.to_datetime(df_book_updated['end_date'], errors='coerce')
 
-# Extraire le mois et l'année de 'end_date'
 df_book_updated['month'] = df_book_updated['end_date'].dt.strftime('%B')
 df_book_updated['month_num'] = df_book_updated['end_date'].dt.month
 mois_ordres = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
 df_book_updated['month'] = pd.Categorical(df_book_updated['month'], categories=mois_ordres, ordered=True)
 
-
-# Compter le nombre de livres par mois
 books_per_month = df_book_updated.groupby(['month', 'month_num']).size().reset_index(name='nombre de livres')
 
-# Trier par ordre des mois de l'année
+
 books_per_month = books_per_month.sort_values(by='month_num',ascending=True)
 
-# Créer un graphique à barres horizontal
+# Bar chart
 fig1 = px.bar(books_per_month,
               x='nombre de livres', 
               y='month',
@@ -175,18 +167,18 @@ fig1.update_traces(textposition="inside",
                     
                 )
 fig1.update_layout(
-    yaxis=dict(categoryorder="array", categoryarray=mois_ordres,autorange="reversed",title=""),  # S'assurer que les mois sont bien triés
+    yaxis=dict(categoryorder="array", categoryarray=mois_ordres,autorange="reversed",title=""),  
     xaxis=dict(
-        showticklabels=False,  # Masquer les étiquettes de l'axe des x
-        zeroline=False,        # Masquer la ligne zéro de l'axe des x
+        showticklabels=False,  
+        zeroline=False,        
         showline=False,
-        title=''),               # Masquer le nom de l'axe des x
-        bargap=0.1,  # Ajouter de l'espace entre les barres
+        title=''),              
+        bargap=0.1,  
         
     )
 
-# temps de lecture par mois
-# compter le temps en minute par mois
+# month reading time
+
 time_per_month = df_book_updated.groupby(['month', 'month_num'])['temps passé sur le livre en heure'].sum().reset_index(name='Temps de lecture en heure').round(0)
 books_per_month = books_per_month.sort_values(by='month_num',ascending=True)
 # Bar chart
@@ -202,35 +194,34 @@ fig2 = px.bar(time_per_month,
 
 
 fig2.update_traces(textposition="inside",
-                   textfont=dict(size=12),   # Réduire la taille de la police
+                   textfont=dict(size=12),  
                    cliponaxis=False,
                    textangle=0 
                 )
 
 fig2.update_layout(
-    yaxis=dict(categoryorder="array", categoryarray=mois_ordres,autorange="reversed",title=""),  # S'assurer que les mois sont bien triés
+    yaxis=dict(categoryorder="array", categoryarray=mois_ordres,autorange="reversed",title=""),  
     xaxis=dict(
-        showticklabels=False,  # Masquer les étiquettes de l'axe des x
-        zeroline=False,        # Masquer la ligne zéro de l'axe des x
+        showticklabels=False,  
+        zeroline=False,        
         showline=False,
         title=''),
     title=dict(
-        text='Monthly Reading Hours',  # Titre
-        x=0.5,                        # Centrer horizontalement
+        text='Monthly Reading Hours',  
+        x=0.5,                        
         xanchor='center',
         yanchor='top',
-        pad=dict(t=5, b=0)            # Réduire l'espace au-dessus et en dessous du titre
+        pad=dict(t=5, b=0)            
     ),
-    margin=dict(t=50, l=20, r=20, b=20),               # Masquer le nom de l'axe des x
-        bargap=0.1,  # Ajouter de l'espace entre les barres
+    margin=dict(t=50, l=20, r=20, b=20),             
+        bargap=0.1,  
     )
 
-# 1/ PLUS LONGUE LECTURE
-# le temps de lecture max
+# 1/ longest read
+
 temps_maxi = df_book_updated[df_book_updated["temps passé sur le livre en heure"] == df_book_updated["temps passé sur le livre en heure"].max()]
-# prisme livre
+
 titre_max_temps_lecture = df_book_updated[df_book_updated["temps passé sur le livre en heure"] == df_book_updated["temps passé sur le livre en heure"].max()]["Titre"].str.title().values[0].split('-')[0].strip()
-# auteur_max_temps_lecture = df_book_updated[df_book_updated["temps passé sur le livre en heure"] == df_book_updated["temps passé sur le livre en heure"].max()]["Auteurs"].str.title().values[0]
 auteur_max_temps_lecture = " ".join(
     df_book_updated[df_book_updated["temps passé sur le livre en heure"] 
                     == df_book_updated["temps passé sur le livre en heure"].max()]["Auteurs"]
@@ -240,22 +231,13 @@ auteur_max_temps_lecture = " ".join(
 )
 temps_max_lecture = df_book_updated["temps passé sur le livre en heure"].max()
 
-# # 2/ PLUS RÉGULIER
-# # Compter le nombre de lignes où "jours de lecture effectifs (jl)" est égal à "Durée lecture (j)"
-# count_regulier = df_book_updated[df_book_updated["jours de lecture effectifs (jl)"] == df_book_updated["Durée lecture (j)"]].shape[0]
 
-# # affiche le dernier, puis l'avant dernier, puis l'avant avant dernier
-# df_book_updated[df_book_updated["jours de lecture effectifs (jl)"] == df_book_updated["Durée lecture (j)"]].sort_values(by="Date de lecture", ascending
-# =False).head(3)[["Titre", "Durée lecture (j)", "jours de lecture effectifs (jl)", "Date de lecture"]]
-# # enregistre les 3 titres dans une liste
-# liste_livres = df_book_updated[df_book_updated["jours de lecture effectifs (jl)"] == df_book_updated["Durée lecture (j)"]].sort_values(by="Date de lecture", ascending   =False).head(3)["Titre"].values
 
-# 3/ PLUS RAPIDE
+# 3/ fastest
 livre_rapide = df_book_updated[df_book_updated["temps passé sur le livre en minute"] > 35]
 livre_rapide = livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]
 
 titre_livre_rapide = livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]["Titre"].str.title().values[0]
-# auteur_livre_rapide =livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]["Auteurs"].str.title().values[0]
 auteur_livre_rapide = " ".join(
     livre_rapide[livre_rapide["pages lues à la minute"] == 
                  livre_rapide["pages lues à la minute"].max()]["Auteurs"]
@@ -267,16 +249,16 @@ auteur_livre_rapide = " ".join(
 
 vitesse_livre_rapide =livre_rapide[livre_rapide["pages lues à la minute"] == livre_rapide["pages lues à la minute"].max()]["pages lues à la minute"].values[0].round(1)
 
-# 4/ PLUS ADDICTIF
+# 4/ Addictive
 livre_addict = df_book_updated[df_book_updated["minutes de lecture/jl"] == df_book_updated["minutes de lecture/jl"].max()]
 titre_livre_addict = livre_addict["Titre"].str.title().values[0]
 auteur_livre_addict = livre_addict["Auteurs"].str.title().values[0]
 minutes_livre_addict = livre_addict["minutes de lecture/jl"].values[0]
 
-# 5/ AUTEURS ET LIVRES
+
 nb_livres_lus = df_book_updated[df_book_updated['% lu'] == 100].shape[0]
 nb_livres_lus_papier = df_book_paper.shape[0]
-# print le nombre d'Auteurs lus de df_book_updated
+
 
 nb_auteurs_lus = df_book_updated[df_book_updated['% lu'] == 100]["Auteurs"].nunique()
 nb_auteurs_lus_papier = df_book_paper["Auteurs"].nunique()
@@ -286,12 +268,11 @@ nb_auteurs_lus_papier = df_book_paper["Auteurs"].nunique()
 # =====Day of the Week Analysis=======
 
 
-# "compter les heures de lectures par jour
-
+# count hours per day of the week
 df_stat['Date de lecture'] = pd.to_datetime(df_stat['date lecture'], format="%Y-%m-%d")
 df_stat['day_of_week'] = df_stat['Date de lecture'].dt.day_name()
 books_per_day_week = df_stat.groupby('day_of_week')['Temps de lecture en heure'].sum().round(0).reset_index(name='hours of reading')
-# Trier par ordre des jours de la semaine lundi 1, mardi 2, etc.
+
 days_order = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 books_per_day_week['day_of_week'] = pd.Categorical(books_per_day_week['day_of_week'], categories=days_order, ordered=True)
 
@@ -308,74 +289,46 @@ fig3 = px.bar(books_per_day_week,
 fig3.update_traces(textposition="inside",cliponaxis=False,)
 fig3.update_layout(
     xaxis=dict(
-        showticklabels=False,  # Masquer les étiquettes de l'axe des x
-        zeroline=False,        # Masquer la ligne zéro de l'axe des x
+        showticklabels=False,  
+        zeroline=False,       
         showline=False,
         title='',
     ),
     yaxis=dict(
-        categoryorder="array", categoryarray=days_order,autorange="reversed" # utiliser l'ordre des jours manuel
+        categoryorder="array", categoryarray=days_order,autorange="reversed" 
         ),
     title=dict(
-        text='Weekly Reading Hours',  # Titre
-        x=0.5,                        # Centrer horizontalement
+        text='Weekly Reading Hours',  
+        x=0.5,                        
         xanchor='center',
         yanchor='top',
-        pad=dict(t=5, b=0)            # Réduire l'espace au-dessus et en dessous du titre
+        pad=dict(t=5, b=0)          
     ),
-    margin=dict(t=50, l=20, r=20, b=20)              # Masquer le nom de l'axe des x
+    margin=dict(t=50, l=20, r=20, b=20)            
 )
-
-# chart4,chart5 = st.columns(2)
-
- 
-
 
 
 # ======Day of the Week Analysis=======
 # =====hour of the day Analysis =======
 
 
-# "compter les heures de lectures par tranche horaire
+# count read by bins of hours
 
-# faire des tranches de 3 heures
+
 df_stat['hour_of_day'] = df_stat['heure de début'].dt.hour
-# Créer des tranches horaires de 2 heures
+
 bins = [i for i in range(0, 25, 2)]
 labels = [f'{str(i).zfill(2)}h-{str(i+2).zfill(2)}h' for i in range(0, 24, 2)]
 df_stat['tranche_horaire'] = pd.cut(df_stat['hour_of_day'], bins=bins, labels=labels, right=False)
 
-# Compter le nombre d'heures de lecture par tranche horaire
+
 books_per_hour = df_stat.groupby('tranche_horaire')['Temps de lecture en heure'].sum().reset_index(name='total_reading_time').round(1)
 
 
-# # Initialisation de la figure et des axes
-# fig5, ax = plt.subplots(figsize=(12, 6))
 
-# # Tracer le KDE plot
-# sns.kdeplot(
-#     data=df_stat,
-#     x='hour_of_day',
-#     weights='Temps de lecture en heure',
-#     bw_adjust=0.5,
-#     fill=True,
-#     color='#0068c9',
-#     ax=ax
-# )
-
-# # Configurer les axes et le titre
-# ax.set_title('Density of Reading Time by Hour of Day', fontsize=16, pad=20)
-# ax.set_xlabel('Hour of the Day', fontsize=14, labelpad=10)
-# ax.set_ylabel('', fontsize=14, labelpad=10)
-# ax.set_xticks(np.arange(0, 25, 2))  # Ajouter les ticks des heures
-# ax.grid(axis='y', linestyle='--', alpha=0.8)
-
-
-
-### début test
 fig5, ax = plt.subplots(figsize=(12, 6))
 
-# books_per_hour déjà calculé
+# books_per_hour calculated
 fig5 = px.area(
     books_per_hour,
     x='tranche_horaire',
@@ -389,13 +342,9 @@ fig5.update_layout(
     xaxis=dict(tickmode='linear',tickangle=45,title=""),
     yaxis=dict(title='Reading Time (hours)'),
     font=dict(family='Arial', size=14)
-    # paper_bgcolor='#F5F5F5',
-    # plot_bgcolor='#F5F5F5'
+
 )
 
-# fig.show()
-
-### fin test
 
 
 # ======Day of the Week Analysis=======
@@ -403,10 +352,9 @@ fig5.update_layout(
 ### scatter plot fig4
 
 
-# Copier la table fact
+
 tdf_books_plot = df_book_updated.copy()
 
-# Recalculer la vitesse de lecture (pages/minute)
 tdf_books_plot['vitesse_lecture'] = tdf_books_plot['# pages lues'] / tdf_books_plot['temps passé sur le livre en minute']
 # Remove outliers
 tdf_books_plot = tdf_books_plot[
@@ -416,9 +364,9 @@ tdf_books_plot = tdf_books_plot[
 # Scatter plot : Temps passé vs Vitesse de lecture
 fig4 = px.scatter(
     tdf_books_plot,
-    x='temps passé sur le livre en minute',  # axe X = temps total passé
-    y='vitesse_lecture',                     # axe Y = vitesse
-    color='category2',                        # couleur par genre secondaire
+    x='temps passé sur le livre en minute',  
+    y='vitesse_lecture',                     
+    color='category2',                 
     hover_data=['Titre', 'Auteurs', 'Catégorie', 'série', 'Durée lecture (j)'],
     labels={
         'temps passé sur le livre en minute': 'Total Time Spent (minutes)',
@@ -432,7 +380,7 @@ fig4 = px.scatter(
 
 
 
-# Ajoute le hovertemplate
+# add le hovertemplate
 fig4.update_traces(
     hovertemplate=
     "<b>Title:</b> %{customdata[0]}<br>" +
@@ -454,45 +402,37 @@ fig4.update_layout(
 
 ###
 
-
-
-
 # KPIs/summary cards
 # create 4 columns
 kpi1, kpi2, kpi3, kpi4,kpi5 = st.columns(5)
 text1, text2, text3, text4,text5 = st.columns(5)
 table = st.columns(1)
 
-# #old ordre
-# chart1, chart4,chart6 = st.columns(3)
-# chart2,chart7,chart8 = st.columns(3)
 
-# nouvel ordre
+# order
 chart1, chart4,chart6,chart2 = st.columns(4)
 chart7,chart8 = st.columns(2)
 chart3 = st.columns(1)
 
 with chart7:
-#     st.markdown("### Reading by time of day")
+
     st.write(fig4)
 with chart6:
-    # st.markdown("### Reading by day of the week")
+
     fig = fig3
     st.write(fig)
 with chart8:
-    # st.markdown("### Reading hours distribution")
-    # st.markdown("Density plot of reading hours")
+
     fig = fig5
     st.write(fig)
 
-# 1/ plus longue lecture 
+# 1/ longest read 
 kpi1.metric(
     label="# Marathon Read (hours)",
     value=round(temps_max_lecture),
     help=("hours")
     )
 
-# stylisation moderne du titre et de l'auteur
 text1.markdown(f"""
 <div style= line-height: 1.2;">
     <div style="font-size:14px; font-weight:600;color:#555;">{titre_max_temps_lecture}</div>
@@ -500,16 +440,15 @@ text1.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# old text
-# text1.markdown(titre_max_temps_lecture+" de "+auteur_max_temps_lecture)
 
-# 2/ plus rapide
+
+# 2/ fastest
 kpi2.metric(
     label="# Page turner (p/min)",
     value=vitesse_livre_rapide,
     help=("pages read per minute")
     )
-# stylisation moderne du titre et de l'auteur
+    # stylisation moderne du titre et de l'auteur
 text2.markdown(f"""
 <div style= line-height: 1.2;">
     <div style="font-size:14px; font-weight:600;color:#555;">{titre_livre_rapide}</div>
@@ -517,10 +456,10 @@ text2.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# text2.markdown(titre_livre_rapide+" de "+auteur_livre_rapide)
+    # text2.markdown(titre_livre_rapide+" de "+auteur_livre_rapide)
 
 
-# 3/ plus addictif
+# 3/ addictive
 kpi3.metric(
     label="# Daily Obsessed (min/day)",
     value=round(minutes_livre_addict),
@@ -533,9 +472,8 @@ text3.markdown(f"""
     <div style="font-size:12px; color:#555;">{auteur_livre_addict}</div>
 </div>
 """, unsafe_allow_html=True)
-# text3.markdown(titre_livre_addict+" de "+auteur_livre_addict)
 
-#4/ auteurs et livres
+#4/ auteurs et books
 kpi4.metric(
     label="# e-Books Read",
     value=nb_livres_lus
@@ -547,7 +485,7 @@ text4.markdown(f"""
 
 </div>
 """, unsafe_allow_html=True)
-# text4.markdown(f"by {nb_auteurs_lus}  different authors")
+
 
 
 kpi5.metric(
@@ -560,32 +498,29 @@ text5.markdown(f"""
 
 </div>
 """, unsafe_allow_html=True)
-# text5.markdown(f"by {nb_auteurs_lus_papier}  different authors")
+
 
 st.markdown("## Book table")
 
 with chart1:
-    # st.markdown("### Reading by Category")
+
     fig = fig0
     st.write(fig)
 
-# chart2 = st.container()
+
 with chart2:
-    # st.markdown("### Reading by Month")
     st.plotly_chart(fig1) 
 
-# chart2 = st.container()
-with chart4:
-    # st.markdown("### Time of Reading by Month")
-    st.plotly_chart(fig2) 
-# 5/ table
 
-# df_print = df_book_updated[df_book_updated['% lu'] == 100]
-auteurs_a_exclure = ["Tamara Rosier", "Michael Joseph"] 
+with chart4:
+
+    st.plotly_chart(fig2) 
+
+# 5/ table without erros
+auteurs_a_exclure = [] 
 titres_a_exclure = ["ERROR: Error reading EPUB format"]
 df_print = df_book_updated[~df_book_updated['Auteurs'].isin(auteurs_a_exclure)]
 df_print = df_print[~df_print['Titre'].isin(titres_a_exclure)]
-# changer la caolonne date lecture en YYYY-MM-DD
 df_print['Date de lecture'] = df_print['Date de lecture'].dt.strftime('%Y-%m-%d')
 
 st.markdown("e-Books read during the period :")
@@ -612,32 +547,18 @@ st.dataframe(
                   ,hide_index=True)
 
 
-
-# # pour faire un print : 
-# text0 = st.empty()
-# aa = df_print.shape[0]
-# text0.markdown(str(aa))
-# # ou text0.markdown(aa)
-
-
 # ===== HEATMAP =====
-
-# V1
 st.markdown("## Heatmap")
 
 # heatmap 
-import calmap
-import matplotlib.pyplot as plt
-# passer df_stat['date lecture'] en dt time
 df_stat = df_stat
 df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture'])
 df_aggregated = df_stat.groupby('date lecture')['Temps de lecture en minute'].sum().reset_index()
 df_serie = df_aggregated.set_index('date lecture')['Temps de lecture en minute']
 
-# Remplir les dates manquantes avec 0
 df_serie = df_serie.asfreq('D', fill_value=0)
 
-# filter_annee est au format ['2024'], on veut 2024
+# filter_annee 
 if filter_annee == ["last 12 months"]:
     annee = df_serie.index.max().year
 elif filter_annee == [] :
@@ -655,31 +576,31 @@ def create_calmap(df_serie):
         fillcolor='lightgrey',
         cmap='YlGn',
         linewidth=2,
-        daylabels=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],  # Correction pour daylabels
+        daylabels=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 
         dayticks=[0, 1, 2, 3, 4, 5, 6], monthly_border=False,
     )
 
     
     
     plt.title('Year of reading')
-    # plt.text("test")
+
     st.pyplot(plt)
 
-# Afficher le plot dans Streamlit
+
 create_calmap(df_serie)
-# ====== fin heatmap =====
+# ====== end heatmap =====
 
 
 # ===== MATRICE =====
 
-# TEMPS DE LECTURE MOYEN
+
 df_stat['Date de lecture en jour'] = pd.to_datetime(df_stat['date lecture'], format="%Y-%m-%d")
-# Temps de lecture moyen par jour, distinct date de lecture en jour
+
 temps_quotidien_moyen_ALL = df_stat["Temps passé sur la page en seconde"].sum() / df_stat["Date de lecture en jour"].nunique()/60 # c
-# Temps de lecture dernier jour (df_stat)
+
 temps_quotidien_moyen_lastday = df_stat[df_stat["Date de lecture en jour"] == df_stat["Date de lecture en jour"].max()]["Temps passé sur la page en seconde"].sum()/60
 
-# temps de lecture 3 derniers jours (df_stat)
+# reading time last 3 days (df_stat)
 temps_quotidien_moyen_3days_sum = (df_stat[df_stat["Date de lecture en jour"] > df_stat["Date de lecture en jour"].max() - timedelta(days=3)]["Temps passé sur la page en seconde"].sum()/60).round(0)
 temps_quotidien_moyen_3days = (df_stat[df_stat["Date de lecture en jour"] > df_stat["Date de lecture en jour"].max() - timedelta(days=3)]["Temps passé sur la page en seconde"].sum()/60/3).round(0)
 temps_quotidien_moyen_7days_sum = df_stat[df_stat["Date de lecture en jour"] > df_stat["Date de lecture en jour"].max() - timedelta(days=7)]["Temps passé sur la page en seconde"].sum()/60
@@ -692,11 +613,8 @@ temps_quotidien_moyen_this_year_sum = df_stat[df_stat["Date de lecture en jour"]
 temps_quotidien_moyen_this_year = df_stat[df_stat["Date de lecture en jour"].dt.year == df_stat["Date de lecture en jour"].max().year]["Temps passé sur la page en seconde"].sum()/60/df_stat["Date de lecture en jour"].nunique()
 
 
+# average page read
 
-
-
-# NOMBRE DE PAGE MOYEN
-# faire un group by de df_stat par id_book et page
 df_stat_grouped_nb_pages = df_stat.groupby(["id_book", "page"]).size().reset_index(name='count')
 nombre_de_lignes = df_stat_grouped_nb_pages.shape[0]
 pages_quotidien_moyen_ALL = nombre_de_lignes / df_stat["Date de lecture en jour"].nunique() # compte que les jours de lecture
@@ -714,12 +632,9 @@ pages_quotidien_moyen_365days_glissants = df_stat[df_stat["Date de lecture en jo
 pages_quotidien_moyen_this_year_sum = df_stat[df_stat["Date de lecture en jour"].dt.year == df_stat["Date de lecture en jour"].max().year].groupby(["id_book", "page"]).size().reset_index(name='count').shape[0]
 pages_quotidien_moyen_this_year = df_stat[df_stat["Date de lecture en jour"].dt.year == df_stat["Date de lecture en jour"].max().year].groupby(["id_book", "page"]).size().reset_index(name='count').shape[0]/df_stat["Date de lecture en jour"].nunique()
 
-
-
-
 print('ALL', 'Last day', 'moyenne 3 days', '3 days sum', 'moyenne 7 days', '7 days sum', 'moyenne 30 days', '30 days sum', 'moyenne 365 days glissants', '365 days glissants sum', 'moyenne this year', 'this year sum')
 
-# vitesse de lecture
+# read speed
 vitesse_lecture_ALL = nombre_de_lignes / df_stat["Temps passé sur la page en seconde"].sum() * 60*60
 vitesse_lecture_lastday = df_stat[df_stat["Date de lecture en jour"] == df_stat["Date de lecture en jour"].max()].groupby(["id_book", "page"]).size().reset_index(name='count').shape[0] / df_stat[df_stat["Date de lecture en jour"] == df_stat["Date de lecture en jour"].max()]["Temps passé sur la page en seconde"].sum() * 60*60
 vitesse_lecture_3days = df_stat[df_stat["Date de lecture en jour"] > df_stat["Date de lecture en jour"].max() - timedelta(days=3)].groupby(["id_book", "page"]).size().reset_index(name='count').shape[0] / df_stat[df_stat["Date de lecture en jour"] > df_stat["Date de lecture en jour"].max() - timedelta(days=3)]["Temps passé sur la page en seconde"].sum() * 60*60
@@ -737,7 +652,7 @@ data = [
     [vitesse_lecture_ALL, vitesse_lecture_lastday, vitesse_lecture_3days, vitesse_lecture_7days, vitesse_lecture_30days, vitesse_lecture_365days_glissants, vitesse_lecture_this_year]
 ]
 
-# Définir les noms des colonnes et des index (lignes)
+# columns and index
 columns = ['Overall', 'Yesterday', 'Last 3 days', 'Last week', 'Last month', 'Last 12 months', 'Year-to-date']
 index = ['⏱️ Avg. Reading Time (min)', '📖 Avg. Pages Read / Day', '⚡ Reading Speed (pages/hour)']
 
@@ -745,7 +660,7 @@ matrice = pd.DataFrame(data, columns=columns, index=index)
 matrice = matrice.fillna(0)
 matrice = matrice.astype(int)
 
-# Styler
+# Style
 matrice_styled = matrice.style.format("{:.0f}").set_properties(**{
     'font-size': '14px', 'text-align': 'center', 'font-weight': 'bold'
 })
@@ -755,7 +670,8 @@ st.markdown("## Reading Insights Matrix")
 st.dataframe(matrice_styled, hide_index=False)
 
 
-# ====== fin matrice =====
+# ====== end matrice =====
+
 st.markdown("---")
 st.markdown("""
 ## 📚 Reading Timeline & Daily Sessions
@@ -775,11 +691,11 @@ plt.figure(figsize=(18, 9))
 df_book_updated['start_date'] = pd.to_datetime(df_book_updated['start_date'])
 df_book_updated['end_date'] = pd.to_datetime(df_book_updated['end_date'])
 
-# Espacement constant
+# space
 espacement_vertical = 1
 positions = [i * espacement_vertical for i in range(len(df_book_updated))]
 
-# Mapping catégorie → couleur en hex
+# Mapping catégorie
 categories = df_book_updated['Catégorie'].unique()
 colors = px.colors.qualitative.Set2
 def rgb_to_hex(rgb_str):
@@ -788,7 +704,7 @@ def rgb_to_hex(rgb_str):
 
 color_map = {cat: rgb_to_hex(colors[i % len(colors)]) for i, cat in enumerate(categories)}
 
-# Tracer les lignes et les titres
+
 for pos, (_, row) in zip(positions, df_book_updated.iterrows()):
     couleur = color_map[row['Catégorie']]
     plt.plot([row['start_date'], row['end_date']], [pos, pos], marker='o', color=couleur)
@@ -799,19 +715,19 @@ plt.suptitle('Timeline of Reading', fontsize=16, y=1)
 plt.title('Dots represent starting and ending date', fontsize=12, y=1)
 plt.yticks([])
 
-# Supprimer les bordures
+
 ax = plt.gca()
 for spine in ax.spines.values():
     spine.set_visible(False)
 
 plt.grid(axis='x', linestyle='--', alpha=0.7)
 
-# Axe X en mois
+
 months = pd.date_range(df_book_updated['start_date'].min(), df_book_updated['end_date'].max(), freq='MS')
 month_labels = [m.strftime('%b') for m in months]
 plt.xticks(months, month_labels, rotation=0)
 
-# Ajouter légende en haut à droite
+# Legend
 legend_elements = [Line2D([0], [0], color=color_map[cat], marker='o', linestyle='-', label=cat, markersize=8) for cat in categories]
 plt.legend(handles=legend_elements, loc='upper right', title='Category')
 
@@ -825,23 +741,19 @@ st.pyplot(plt)
 
 # =====sessions de lecture=======
 
-
-# Mapping catégorie → couleur (convertie en hex)
-
-
 # Convertir les colonnes en datetime
 df_stat['heure de début'] = pd.to_datetime(df_stat['heure de début'])
 df_stat['date de fin de lecture'] = pd.to_datetime(df_stat['date de fin de lecture'])
 
-# Trier
+# Filter
 df_stat = df_stat.sort_values(by='heure de début')
 
-# Calculer diff entre logs et assigner session_id
+# calculate diff between logs and assign session_id
 df_stat['diff_minutes'] = df_stat['heure de début'].diff().dt.total_seconds() / 60
 session_threshold = 20
 df_stat['session_id'] = (df_stat['diff_minutes'] > session_threshold).cumsum()
 
-# Agréger sessions
+# group sessions
 sessions = df_stat.groupby('session_id').agg({
     'id_book': 'first',
     'heure de début': 'min',
@@ -853,7 +765,7 @@ sessions = df_stat.groupby('session_id').agg({
 sessions.columns = ['_'.join(col).strip() for col in sessions.columns]
 sessions = sessions.reset_index()
 
-# Merge avec titres et catégories
+# Merge
 sessions_with_titles = sessions.merge(
     df_book_updated[['id','Titre','Catégorie']],
     left_on='id_book_first',
@@ -862,12 +774,11 @@ sessions_with_titles = sessions.merge(
 )
 sessions_with_titles.drop(columns=['id'], inplace=True)
 
-# Calculs supplémentaires
+
 sessions_with_titles["nombre de pages lues"] = sessions_with_titles["page_max"] - sessions_with_titles["page_min"] + 1
 sessions_with_titles["Temps de lecture en minute"] = (sessions_with_titles["Temps passé sur la page en seconde_sum"]/60).round(2)
 sessions_with_titles['heure de fin'] = sessions_with_titles['heure de début_min'] + pd.to_timedelta(sessions_with_titles['Temps passé sur la page en seconde_sum'], unit='s')
 
-# Filtrer pour l'année choisie
 if filter_annee == ["last 12 months"] or filter_annee == []:
     année_plot = df_stat['date lecture'].dt.year.max()
 else:
@@ -876,7 +787,7 @@ else:
 session_plot = sessions_with_titles[sessions_with_titles['heure de début_min'].dt.year == année_plot]
 session_plot_droped = session_plot[session_plot['heure de début_min'].dt.day == session_plot['heure de fin'].dt.day]
 
-# Conversion heures en secondes
+# hours in seconds
 def time_to_seconds(t):
     return t.hour*3600 + t.minute*60 + t.second
 session_plot_droped['heure_debut_sec'] = session_plot_droped['heure de début_min'].dt.time.apply(time_to_seconds)
@@ -887,15 +798,13 @@ categories = session_plot_droped['Catégorie'].unique()
 colors = px.colors.qualitative.Set2
 color_map = {}
 for i, cat in enumerate(categories):
-    rgb_str = colors[i % len(colors)]  # ex: 'rgb(102,194,165)'
-    # Conversion rgb string → tuple
+    rgb_str = colors[i % len(colors)]  
     rgb_tuple = tuple(int(x) for x in rgb_str[4:-1].split(','))
-    # Conversion tuple → hex
     hex_color = mcolors.to_hex([c/255 for c in rgb_tuple])
     color_map[cat] = hex_color
 
 
-# Mapping catégorie → couleur
+# Mapping catégorie
 categories = session_plot_droped['Catégorie'].unique()
 colors = px.colors.qualitative.Set2
 
@@ -908,14 +817,14 @@ for _, row in session_plot_droped.iterrows():
              [row['heure_debut_sec'], row['heure_fin_sec']],
              marker='o', color=couleur, linestyle='-')
 
-# Axe Y : heures
+# Axe Y : hours
 ticks = [i*3600 for i in range(24)]
 labels = [f'{i:02d}:00' for i in range(24)]
 plt.yticks(ticks, labels)
 plt.ylim(0, 24*3600-1)
 plt.ylabel('Hour (HH:MM)')
 
-# Axe X : tous les mois
+# Axe X : month
 session_plot_droped['month'] = session_plot_droped['heure de début_min'].dt.strftime('%b')
 months_order = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
 month_positions = session_plot_droped.groupby('month')['heure de début_min'].min().reindex(months_order)
@@ -925,7 +834,7 @@ plt.xlabel('')
 plt.title("Each colored line represents a reading session interval", fontsize=12)
 plt.suptitle(f'Daily session chart in {année_plot}', y=1, fontsize=16)
 
-# Légende
+# Légend
 legend_elements = [Line2D([0],[0], color=color_map[cat], marker='o', linestyle='-', label=cat) for cat in categories]
 plt.legend(handles=legend_elements, loc='upper right', title='Category')
 
@@ -938,7 +847,7 @@ st.pyplot(plt)
 # ======session de  lecture=====
 
 
-# ======session de lecture analyse=====
+# ======session analyse=====
 number_of_reading_session = session_plot.shape[0]
 
 moyenne_temps_lecture_par_sessions_minutes = (session_plot["Temps passé sur la page en seconde_sum"].mean()/60).round(2)
@@ -964,10 +873,10 @@ comparison_year = 2024
 
 
 # VARIABLES
-## 1/ compter le nombre de livres entammés 
+## 1/ started books
 nb_livre_current_year = df_for_graph[df_for_graph['Date de lecture'].dt.year == current_year]['Titre'].nunique()
 nb_livre_comparison_year = df_for_graph[df_for_graph['Date de lecture'].dt.year == comparison_year]['Titre'].nunique()
-## 2/ compter le nombre de livres terminés 
+## 2/ terminated books 
 nb_livre_current_year_lus = df_for_graph[
     (df_for_graph['Date de lecture'].dt.year == current_year) & 
     (df_for_graph['% lu'] == 100)
@@ -980,23 +889,23 @@ nb_livre_comparison_year_lus = df_for_graph[
 ratio_lu_current = round((nb_livre_current_year_lus / nb_livre_current_year) * 100)
 ratio_lu_comparison = round((nb_livre_comparison_year_lus / nb_livre_comparison_year) * 100)
 
-## 3/ compter le nombre d'auteurs et ratio livres / auteurs
+## 3/ count authors
 nb_auteurs_current_year = df_for_graph[df_for_graph['Date de lecture'].dt.year == current_year]['Auteurs'].nunique()
 nb_auteurs_comparison_year = df_for_graph[df_for_graph['Date de lecture'].dt.year == comparison_year]['Auteurs'].nunique()
 ratio_auteurs_current_year = round((nb_auteurs_current_year / nb_livre_current_year) * 100)
 ratio_auteurs_comparison_year = round(( nb_auteurs_comparison_year/nb_livre_comparison_year)*100)
-# dans df_for_graph, compter les auteurs qui apparaissent uniquement dans la current year
+
 nb_auteurs_current_year_only = df_for_graph[
     (df_for_graph['Date de lecture'].dt.year == current_year) &
     (df_for_graph['Auteurs'].isin(df_for_graph[df_for_graph['Date de lecture'].dt.year == comparison_year]['Auteurs']) == False)
 ]['Auteurs'].nunique()
-# nombre auteur unique dans la comparison year
+
 nb_auteurs_comparison_year_only = df_for_graph[
     (df_for_graph['Date de lecture'].dt.year == comparison_year) &
     (df_for_graph['Auteurs'].isin(df_for_graph[df_for_graph['Date de lecture'].dt.year == current_year]['Auteurs']) == False)
 ]['Auteurs'].nunique()
 
-## 4/ nombre de pages
+## 4/ page number
 ### nombre de pages total
 nb_page_current_year = df_for_graph[df_for_graph['Date de lecture'].dt.year == current_year]['# pages lues'].sum()
 nb_page_comparison_year = df_for_graph[df_for_graph['Date de lecture'].dt.year == comparison_year]['# pages lues'].sum()
@@ -1018,7 +927,7 @@ temps_lecture_par_jour_comparison_year = temps_lecture_comparison_year / 365
 ### vitesse de lecture
 
 
-# Création du df
+# df plot
 data = {
     comparison_year: [
         f"{nb_livre_comparison_year} Books Started",
@@ -1039,7 +948,7 @@ data = {
 
 df = pd.DataFrame(data)
 
-# utiliser un df HTML
+# df HTML
 html_table = df.style.set_table_styles([
     {
         'selector': 'table, th, td',
@@ -1051,7 +960,7 @@ html_table = df.style.set_table_styles([
 ]).hide(axis="index").to_html()
 
 
-# AFFICHAGE DU TABLEAU
+# display table
 st.markdown(html_table, unsafe_allow_html=True)
 
 ### END YEAR COMPARAISON
@@ -1080,15 +989,12 @@ for i, (label, value) in enumerate(kpi_values.items()):
 
 # prepare un canevas pour 4 plots
 fig, axs = plt.subplots(2, 2, figsize=(12, 12))
-# donne un titre au canevas
 fig.suptitle('Distribution of reading time per session')
-# ajoute une ligne de texte juste sous le titre du suptitle
 fig.text(0.5, 0.95, f'Year {année_plot}, number of session : {number_of_reading_session} ', ha='center')
 
 # plot 1 : Distribution des temps de lecture par catégorie
 sns.violinplot(data=session_plot, y='Temps de lecture en minute', x='Catégorie', ax=axs[0, 0])
 axs[0, 0].set_title('Session by category')
-# axs[0, 0].set_ylabel('Temps de lecture en minute')
 axs[0, 0].set_xlabel('Category')
 axs[0, 0].tick_params(axis='x', rotation=45)
 axs[0, 0].set_ylabel('Reading time in minutes')
@@ -1102,15 +1008,12 @@ axs[0, 1].set_ylabel('Reading time in minutes')
 axs[0, 1].set_xlabel('Month of reading')
 axs[0, 1].set_yticks(range(0, 300, 30))
 
-
-
 # plot 3 : Distribution des temps de lecture par jour de la semaine
 sns.violinplot(data=session_plot, y='Temps de lecture en minute', x=session_plot["heure de début_min"].dt.dayofweek, ax=axs[1, 0])
 axs[1, 0].set_title('Session by day of the week')
 axs[1, 0].set_ylabel('Reading time in minutes')
 axs[1, 0].set_xlabel('Day of the week')
 axs[1, 0].set_yticks(range(0, 300, 30))
-
 
 # plot 4 : Distribution des temps de lecture par heure de début de session
 sns.violinplot(data=session_plot, y='Temps de lecture en minute', x=session_plot["heure de début_min"].dt.hour, ax=axs[1, 1])
@@ -1128,3 +1031,4 @@ st.pyplot(plt)
 # ======finsession de lecture=====
 
 
+### la fin ###

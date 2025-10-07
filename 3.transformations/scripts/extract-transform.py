@@ -3,7 +3,6 @@ import time
 start_time = time.time()
 import warnings
 from datetime import timedelta
-
 import subprocess
 import sys
 import sqlite3
@@ -31,19 +30,13 @@ print("="*80)
 print("chargement du fichier sqlite en cours")
 
 
-
-
-
-
-
-# database_path = Path(__file__).parent / "sqlite/update/statistics.sqlite3" # OLD
 database_path = Path(__file__).parent.parent.parent / "1.data" / "1.raw" / "sqlite" / "statistics.sqlite3"
-# si database_path n'existe pas, on arrete le script
+
 if not os.path.exists(database_path):
     print(f"file {database_path} does not exist. To install or update your db, paste your statistics.sqlite3 file from your reader to",database_path)
     sys.exit(1)
 
-# Connexion à la base de données SQLite
+
 conn = sqlite3.connect(database_path)
 
 # Liste toutes les tables de la base de données
