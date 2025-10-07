@@ -4,7 +4,7 @@ A personal analytics project to explore and visualize my reading habits. This re
 
 You can read the full story [on Substack!](https://chrsolv.substack.com/p/i-turned-my-kobo-reading-data-into).
 
-![Landing page](5.github\img\image.png)
+![Landing page](5.github/img/image.png)
 *All images are screenshots from the streamlit app*
 
 ---
@@ -27,7 +27,7 @@ The workflow is structured into three main parts:
    - Interactive playground for testing new visualizations, calculations, or features before integrating them into the main app.
 
 
-![alt text](5.github\img\image2.png)
+![alt text](5.github/img/image2.png)
 
 
 ---
@@ -46,7 +46,7 @@ book_data_analysis/
 └─ requirements.txt
 ```
 
-![alt text](5.github\img\image3.png)
+![alt text](5.github/img/image3.png)
 
 **Note:** All raw or sensitive data files are excluded from this repository. Demo files are provided to allow testing and exploring the app.
 
@@ -91,7 +91,7 @@ Interactive charts: powered by Plotly Express.
 
 Experimentation page: try new ideas without affecting the main app.
 
-![](5.github\img\image5.png)
+![](5.github/img/image5.png)
 
 ## 📖 Dependencies
 
@@ -119,5 +119,5 @@ Contributions are welcome! Please follow the guidelines in CONTRIBUTING.md.
 
 ## Screenshots
 
-![](5.github\img\image6.png)
-![](5.github\img\image7.png)
+![](5.github/img/image6.png)
+![](5.github/img/image7.png)
