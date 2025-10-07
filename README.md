@@ -1,90 +1,108 @@
 # 📚 KO-log: My E-Reading Habit Data Pipeline & Dashboard
 
-
-
-### Introduction
-
-This project is a deep dive into my personal reading habits, transforming the discreet logging data from my **Kobo e-reader** (running **KOReader**) into a complete and robust data pipeline. The goal was to answer specific questions about my reading profile:
-* **How much** do I really read? Am I a **sprinter** or a **marathon** reader?
-* Which **authors** and **genres** do I binge?
-* Are there **temporal patterns** in my reading (e.g., "more sci-fi in winter, more fantasy in spring")?
-
-This solution demonstrates expertise across **Data Engineering**, **Data Analytics**, and **Visualization**, employing modern technologies and an efficient incremental approach.
+A personal analytics project to explore and visualize my reading habits. This repository combines **Python**, **pandas**, **Streamlit**, and **Parquet-based data processing** to provide insights into books, reading speed, and other statistics.
 
 ---
 
-## 🛠️ Technical Architecture (The Pipeline)
+## 🔍 Overview
 
-The project follows a four-step Extract, Transform, Load (ETL) flow, from the raw source file to the interactive dashboard.
+We carry our books everywhere, but rarely do we see the data behind our reading habits. This project answers questions such as:
 
-### 1. Data Extraction & Source (SQLite)
-* **Source:** The project starts by copying the `statistics.sqlite3` file from the e-reader.
-    * This file contains all book metadata (`book` table) and granular reading session logs, including time spent per page flip (`page_stat_data` table).
+- How much do I really read?
+- Which authors or series do I binge?
+- Am I more of a sprinter or a marathon reader?
 
-### 2. Data Engineering & Transformation (Python, Pandas, Parquet)
-A central Python script (`transfo python.py`) orchestrates the pipeline, focusing on **efficiency and quality**:
-* **Cleaning:** Normalizing data and converting Unix timestamps to readable dates.
-* **Incremental Pipeline:** The core logic leverages **Parquet** files (`df_book.parquet` and `stats_lecture.parquet`) to store the processed state. At each run, the script only processes **new** books or **updated** reading sessions.
-* **Data Modeling:** Creating structured tables for analytics: **Fact** (reading sessions) and **Dim** (enriched book metadata).
-* **Archiving:** The raw SQLite source file is automatically timestamped and archived after processing.
+The workflow is structured into three main parts:
 
-### 3. AI-Powered Data Enrichment (LLM, LangChain) 🤖
-To fill in missing metadata (genres, publication years), a **Large Language Model (via Azure OpenAI/GPT-4o)** is seamlessly integrated into the pipeline:
-* **Categorization:** Automatically detecting and classifying genres (e.g., `fiction/fantasy`, `non-fiction/history`) using a structured prompt.
-* **Metadata Guessing:** Finding the `First published date` for books lacking this information.
-* **Cost Optimization:** LLM calls are executed **incrementally**—only for new books or missing fields—to save tokens and minimize API expenses.
-
-### 4. Visualization & Analytics (Streamlit)
-The front-end is an interactive dashboard built with **Streamlit** for data storytelling and exploration:
-* **Key Metrics:** Total reading time, books completed, average pages read per minute, and reading streaks.
-* **Profile Analysis:** Charts comparing authors, genres, reading pace, and time-to-finish a book.
-* **Temporal Insights:** Visualizations revealing daily and seasonal reading patterns (e.g., peak reading hours).
+1. **Data Extraction & Transformation** (`3.transformations/scripts/extract-transform.py`)
+   - Processes raw reading data and produces clean, structured datasets (`.parquet` files).
+2. **Analytics & Visualization** (`4.app/app.py`)
+   - Streamlit app to explore personal reading data through charts, KPIs, and tables.
+3. **Experiments & Prototypes** (`4.app/pages/experiments.py`)
+   - Interactive playground for testing new visualizations, calculations, or features before integrating them into the main app.
 
 ---
 
-## 💻 Key Technologies
+## 📂 Repository Structure
 
-| Domain | Tool(s) | Specific Use |
-| :--- | :--- | :--- |
-| **Source** | **SQLite3** (KOReader log) | Raw, granular log database from the e-reader. |
-| **Data Engineering** | **Python**, **Pandas** | Cleaning, transformation, and incremental logic. |
-| **Storage** | **Parquet** | Columnar format for fast, efficient intermediate data storage. |
-| **AI/Enrichment** | **LLM** (Azure OpenAI/GPT-4o), **LangChain** | Incremental enrichment of book metadata (genre, publication year). |
-| **Visualization** | **Streamlit**, **Plotly/Matplotlib** | Interactive dashboard creation and data visualization. |
+book_data_analysis/
+├─ 1.data/ # Raw and processed data (ignored in Git)
+├─ 3.transformations/ # ETL scripts
+├─ 4.app/ # Streamlit application
+│ ├─ app.py # Main app entry point
+│ └─ pages/ # Extra pages (experiments, prototypes)
+├─ README.md
+├─ .gitignore
+└─ requirements.txt
 
----
 
-## 💡 Key Takeaways & Skills Demonstrated
-
-This project serves as proof of proficiency in several core **Data & Analytics Engineering** concepts:
-
-* **End-to-End Pipeline Design:** Building a complete data flow from a challenging source to a consumer-ready dashboard.
-* **Performance & Cost Optimization:** Implementing **incremental data loading** for both processing (Parquet) and costly API calls (LLM). This is a critical skill for production environments.
-* **Data Quality with AI:** Creative and practical application of LLMs for **data enrichment** to solve real-world data quality issues.
-* **Analytics and Storytelling:** Transforming raw operational data into meaningful **analytics metrics** (e.g., `pages lues à la minute`, `minutes de lecture/jl`) and presenting them visually.
+**Note:** All raw or sensitive data files are excluded from this repository. Demo files are provided to allow testing and exploring the app.
 
 ---
 
-## 🚀 Getting Started (Setup)
+## ⚡ Quick Start
 
-1.  **Clone the repository**
+### 1. Clone the repository
+```bash
+git clone https://github.com/ChrisOlv/book_data_analysis.git
+cd book_data_analysis
+```
+### 2. Create a Python virtual environment
+```
+python -m venv .venv
+source .venv/bin/activate   # Linux / Mac
+.venv\Scripts\activate      # Windows
+```
+### 3. Install dependencies
+```
+pip install -r requirements.txt
+```
 
-2.  **Environment Setup**:
-    # Create and activate a virtual environment (recommended)
-    python -m venv venv
-    source venv/bin/activate 
+### 4. Run the Streamlit app
+```
+streamlit run 4.app/app.py
+```
+You should see the interactive dashboard in your browser.
 
-    # Install dependencies
-    pip install -r requirements.txt 
-    
-3.  **Add Your Data Source** :
-    * Connect your KO-reader and copy the `statistics.sqlite3` file.
-    * Place it in the directory: `1.data/1.raw/sqlite/`
+If you do not have real data, the app will fallback to demo datasets (*_demo.parquet) to allow testing.
 
-4.  **Execute the Data Pipeline** :
-    * *Ensure your Azure OpenAI keys and endpoint are configured in your environment variables or a `.env` file.*
 
-5.  **Launch the Streamlit Dashboard** :
-    ```bash
-    streamlit run 4.app\app.py
-    ```
+## 🛠️ Features
+
+Reading analytics: visualize reading duration, speed, and category distribution.
+
+Author & series tracking: identify favorite authors and series.
+
+Interactive charts: powered by Plotly Express.
+
+Experimentation page: try new ideas without affecting the main app.
+
+## 📖 Dependencies
+
+Python >= 3.10
+
+pandas
+
+pathlib
+
+Streamlit
+
+Plotly Express
+
+(Full list in requirements.txt.)
+
+## 📌 Notes
+
+All sensitive or private reading data should never be committed. Use the _demo.parquet files for testing.
+
+Contributions are welcome! Please follow the guidelines in CONTRIBUTING.md.
+
+## 🚀 Next Steps
+
+Add unit tests for ETL scripts
+
+Expand Streamlit app with more KPIs
+
+Add automated CI/CD with GitHub Actions
+
+Improve data input workflow (e.g., automatic ingestion from e-readers)
