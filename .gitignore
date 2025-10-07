@@ -3,6 +3,6 @@ dataviz.ipynb
 EDA.ipynb
 paper_audio.xlsx
 1.data/3.archives/sqlite/
-1.data\2.processed\df_book_updated.parquet
-1.data\2.processed\df_book.parquet
-D:\6.dev\book_data_analysis\1.data\2.processed\stats_lecture.parquet
+df_book_updated.parquet
+df_book.parquet
+stats_lecture.parquet
