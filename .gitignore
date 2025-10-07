@@ -6,3 +6,4 @@ paper_audio.xlsx
 df_book_updated.parquet
 df_book.parquet
 stats_lecture.parquet
+.env
