@@ -13,7 +13,7 @@ matplotlib==3.9.2
 seaborn==0.13.2
 calplot==0.1.7.5
 altair==5.4.1
-calmap
+calmap==0.0.11 
 
 # excel
 openpyxl==3.1.5
