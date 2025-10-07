@@ -4,6 +4,8 @@ A personal analytics project to explore and visualize my reading habits. This re
 
 You can read the full story [on Substack!](https://chrsolv.substack.com/p/i-turned-my-kobo-reading-data-into).
 
+You can [try the streamlit app here](https://book-data-geek-chrs-olv.streamlit.app/)
+
 ![Landing page](5.github/img/image.png)
 *All images are screenshots from the streamlit app*
 
