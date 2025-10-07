@@ -27,7 +27,7 @@ Project maintainers are responsible for clarifying standards of acceptable behav
 
 Instances of abusive, harassing, or otherwise unacceptable behavior may be reported by contacting the project owner.
 
-All complaints will be reviewed and investigated promptly and fairly.
+All complaints will be reviewed and investigated promptly and fairly. 
 
 ## Scope
 
