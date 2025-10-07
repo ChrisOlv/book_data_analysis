@@ -13,34 +13,32 @@ import os
 from pathlib import Path
 import datetime
 
-# Change le répertoire de travail pour le répertoire du script --> permet de lancer le script depuis n'importe où
+# launch the script from anywhere
 os.chdir(os.path.dirname(__file__))
 
+# paths
 df_book_updated_path = Path(__file__).parent.parent / "1.data" / "2.processed" / "df_book_updated.parquet"
 df_stat_path = Path(__file__).parent.parent / "1.data" / "2.processed" / "stats_lecture.parquet"
 book_paper_path = Path(__file__).parent.parent / "1.data"/"1.raw"/"paper_audio" / "paper_audio.xlsx"
 
-# Configuration de la page
+# page config
 st.set_page_config(
     page_title="book log analysis",
     page_icon="📖",
-    layout="wide", #wide-screen layout
-    initial_sidebar_state="collapsed", #expanded sidebar
+    layout="wide", 
+    initial_sidebar_state="collapsed",
 ) 
 for path in [df_book_updated_path, df_stat_path, book_paper_path]:
     if not path.exists():
         raise FileNotFoundError(f"Fichier introuvable : {path}")
 
-
+# Cache
 @st.cache_data
 def load_data():
     df_book_updated = pd.read_parquet(df_book_updated_path)
     df_stat = pd.read_parquet(df_stat_path)
     df_book_paper = pd.read_excel(book_paper_path)
-    
-    # date conversion
     df_book_updated['Date de lecture'] = pd.to_datetime(df_book_updated['Date de lecture'], format="%Y-%m-%dT%H:%M:%S.%fZ")
-    # df_book_paper['date de lecture'] = pd.to_datetime(df_book_paper['date de lecture'], format='%d/%m/%Y')
     df_book_paper['date de lecture'] = pd.to_datetime(df_book_paper['date de lecture'],dayfirst=True,errors="coerce")
     df_book_paper = df_book_paper.dropna(subset=['date de lecture'])
     return df_book_updated, df_book_paper, df_stat
@@ -48,17 +46,13 @@ def load_data():
 df_book_updated, df_book_paper, df_stat = load_data()
 df_for_graph = df_book_updated.copy()
 
-
-# title
 # dashboard title
 st.title("📚 Book Data Analysis")
 st.subheader("Exploring my KO e-reader reading stats")
 st.markdown("""From page flips to patterns: diving into my reading journey with KO-reader. 
-Every session, every book, every page, now visualized.
+Every session, every book, every page, now visualized.""")
 
-            """)
-
-# Sidebar : configuration des filtres
+# Sidebar : filters
 with st.sidebar:
     st.header("Chart parameters ⚙️")
     filter_annee = st.multiselect('Year', ['2023', '2024', '2025', "last 12 months"], default=['2024'])
@@ -70,7 +64,7 @@ with st.sidebar:
 
     st.markdown("---")
     st.markdown(
-        '<h6>Made in &nbsp<img src="https://streamlit.io/images/brand/streamlit-mark-color.png" alt="Streamlit logo" height="16">&nbsp by <a href="https://github.com/ChrisOlv">@chris</a></h6>',
+        '<h6>Made in &nbsp<img src="https://streamlit.io/images/brand/streamlit-mark-color.png" alt="Streamlit logo" height="16">&nbsp by <a href="https://www.linkedin.com/in/christopheoliveres/">@chris</a></h6>',
         unsafe_allow_html=True,
     )
 
