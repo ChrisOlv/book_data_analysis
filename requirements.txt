@@ -2,10 +2,9 @@
 streamlit==1.39.0
 
 # Data 
-pandas==1.5.3
-# pandas==2.2.3
-# numpy==1.26.4
-numpy==1.21.6
+
+pandas==2.2.3
+numpy==1.26.4
 # pyarrow==17.0.0
 fastparquet==2024.5.0
 
@@ -15,7 +14,7 @@ matplotlib==3.9.2
 seaborn==0.13.2
 calplot==0.1.7.5
 altair==5.4.1
-calmap==0.0.11 
+# calmap==0.0.11 
 # distutils
 
 # excel

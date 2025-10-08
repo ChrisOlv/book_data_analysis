@@ -9,7 +9,7 @@ from datetime import timedelta
 import os 
 from pathlib import Path
 import datetime
-import calmap
+# import calmap
 
 # launch the script from anywhere
 os.chdir(os.path.dirname(__file__))
@@ -582,27 +582,27 @@ else:
     annee = int(filter_annee[0])
 
 
-# st.pyplot(figure)
-def create_calmap(df_serie):
-    plt.figure(figsize=(16, 10))
-    calmap.yearplot(
-        df_serie,
-        year=annee,
-        fillcolor='lightgrey',
-        cmap='YlGn',
-        linewidth=2,
-        daylabels=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 
-        dayticks=[0, 1, 2, 3, 4, 5, 6], monthly_border=False,
-    )
+# # st.pyplot(figure)
+# def create_calmap(df_serie):
+#     plt.figure(figsize=(16, 10))
+#     calmap.yearplot(
+#         df_serie,
+#         year=annee,
+#         fillcolor='lightgrey',
+#         cmap='YlGn',
+#         linewidth=2,
+#         daylabels=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 
+#         dayticks=[0, 1, 2, 3, 4, 5, 6], monthly_border=False,
+#     )
 
     
     
-    plt.title('Year of reading')
+#     plt.title('Year of reading')
 
-    st.pyplot(plt)
+#     st.pyplot(plt)
 
 
-create_calmap(df_serie)
+# create_calmap(df_serie)
 # ====== end heatmap =====
 
 
