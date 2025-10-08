@@ -3,12 +3,9 @@ import plotly.express as px
 import streamlit as st 
 import seaborn as sns
 import matplotlib.pyplot as plt
-import matplotlib.dates as mdates
 import matplotlib.colors as mcolors
 from matplotlib.lines import Line2D
 from datetime import timedelta
-import random
-import numpy as np
 import os 
 from pathlib import Path
 import datetime
