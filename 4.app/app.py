@@ -534,13 +534,43 @@ titres_a_exclure = ["ERROR: Error reading EPUB format"]
 df_print = df_book_updated[~df_book_updated['Auteurs'].isin(auteurs_a_exclure)]
 df_print = df_print[~df_print['Titre'].isin(titres_a_exclure)]
 df_print['Date de lecture'] = df_print['Date de lecture'].dt.strftime('%Y-%m-%d')
+# # # commenting pour test
+# st.markdown("e-Books read during the period :")
+# st.dataframe(
+#     df_print[["Titre","Auteurs","Catégorie","Date de lecture","Year rel", "# pages lues","pages lues à la minute","Durée lecture (j)", "jours de lecture effectifs (jl)", "# pages lues/jl","temps passé sur le livre en heure","minutes de lecture/jl" ]],
+#              hide_index=True,
+#              height=500,
+#              )
+# # fin commentingpour test
 
+####
 st.markdown("e-Books read during the period :")
-st.dataframe(
-    df_print[["Titre","Auteurs","Catégorie","Date de lecture","Year rel", "# pages lues","pages lues à la minute","Durée lecture (j)", "jours de lecture effectifs (jl)", "# pages lues/jl","temps passé sur le livre en heure","minutes de lecture/jl" ]],
-             hide_index=True,
-             height=500,
-             )
+
+# Renommer les colonnes pour l'affichage uniquement
+cols_to_display = [
+    "Titre", "Auteurs", "Catégorie", "Date de lecture", "Year rel",
+    "# pages lues", "pages lues à la minute", "Durée lecture (j)",
+    "jours de lecture effectifs (jl)", "# pages lues/jl",
+    "temps passé sur le livre en heure", "minutes de lecture/jl"
+]
+df_display = df_print[cols_to_display].rename(columns={
+    "Titre": "Title",
+    "Auteurs": "Authors",
+    "Catégorie": "Category",
+    "Date de lecture": "Read Date",
+    "Year rel": "Realease Y.",
+    "# pages lues": "Pages read",
+    "pages lues à la minute": "Pages/min",
+    "Durée lecture (j)": "Duration (d)",
+    "jours de lecture effectifs (jl)": "Consec. days",
+    "# pages lues/jl": "Pages/day",
+    "temps passé sur le livre en heure": "Hours spent",
+    "minutes de lecture/jl": "Minutes/day"
+})
+
+st.dataframe(df_display, hide_index=True, height=500)
+
+###
 st.markdown("## Paper Books")
 df_book_paper["date de lecture"] = pd.to_datetime(df_book_paper["date de lecture"]).dt.date
 
