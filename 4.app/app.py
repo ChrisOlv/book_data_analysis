@@ -9,15 +9,12 @@ from datetime import timedelta
 import os 
 from pathlib import Path
 import datetime
-# import calmap
+
 
 # launch the script from anywhere
 os.chdir(os.path.dirname(__file__))
 
-# paths
-# df_book_updated_path = Path(__file__).parent.parent / "1.data" / "2.processed" / "df_book_updated.parquet"
-# df_stat_path = Path(__file__).parent.parent / "1.data" / "2.processed" / "stats_lecture.parquet"
-
+# paths (use normal or demo file)
 
 def get_data_path(filename: str, folder="1.data/2.processed") -> Path:
     base = Path(__file__).parent.parent / folder
@@ -562,49 +559,57 @@ st.dataframe(
                   ,hide_index=True)
 
 
+
+# ====== end heatmap =====
+### TEST CALPLOT
+import calplot
+import matplotlib.pyplot as plt
+
 # ===== HEATMAP =====
-st.markdown("## Heatmap")
+import calplot
+import matplotlib.pyplot as plt
 
-# heatmap 
-df_stat = df_stat
+# ===== HEATMAP =====
+st.markdown("## Heatmap")  # titre Streamlit, plus proche du graph
+
+# Préparation des données
 df_stat['date lecture'] = pd.to_datetime(df_stat['date lecture'])
-df_aggregated = df_stat.groupby('date lecture')['Temps de lecture en minute'].sum().reset_index()
+df_aggregated = (
+    df_stat.groupby('date lecture')['Temps de lecture en minute']
+    .sum()
+    .reset_index()
+)
 df_serie = df_aggregated.set_index('date lecture')['Temps de lecture en minute']
-
 df_serie = df_serie.asfreq('D', fill_value=0)
 
-# filter_annee 
+# Détermination de l'année
 if filter_annee == ["last 12 months"]:
     annee = df_serie.index.max().year
-elif filter_annee == [] :
+elif filter_annee == []:
     annee = df_serie.index.max().year
 else:
     annee = int(filter_annee[0])
 
+# Filtrer la série sur l'année choisie
+df_annee = df_serie[df_serie.index.year == annee]
 
-# # st.pyplot(figure)
-# def create_calmap(df_serie):
-#     plt.figure(figsize=(16, 10))
-#     calmap.yearplot(
-#         df_serie,
-#         year=annee,
-#         fillcolor='lightgrey',
-#         cmap='YlGn',
-#         linewidth=2,
-#         daylabels=['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'], 
-#         dayticks=[0, 1, 2, 3, 4, 5, 6], monthly_border=False,
-#     )
+# Fonction de création du calendrier avec calplot
+def create_calplot(df_annee):
+    fig, ax = calplot.calplot(
+        df_annee,
+        cmap='YlGn',
+        colorbar=False,   # pas de légende
+        linewidth=0,      # pas de contours
+        figsize=(16, 10),
+    )
+    plt.tight_layout()   # réduit les marges inutiles
+    st.pyplot(fig)
 
-    
-    
-#     plt.title('Year of reading')
-
-#     st.pyplot(plt)
+create_calplot(df_annee)
 
 
-# create_calmap(df_serie)
-# ====== end heatmap =====
 
+### FIN TEST CALPLOT
 
 # ===== MATRICE =====
 
