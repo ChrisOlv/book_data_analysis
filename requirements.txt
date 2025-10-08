@@ -2,8 +2,10 @@
 streamlit==1.39.0
 
 # Data 
-pandas==2.2.3
-numpy==1.26.4
+pandas==1.5.3
+# pandas==2.2.3
+# numpy==1.26.4
+numpy==1.21.6
 # pyarrow==17.0.0
 fastparquet==2024.5.0
 
