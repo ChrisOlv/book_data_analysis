@@ -541,7 +541,7 @@ df_print['Date de lecture'] = df_print['Date de lecture'].dt.strftime('%Y-%m-%d'
 #              hide_index=True,
 #              height=500,
 #              )
-# # fin commentingpour test
+# # fin commentingpour test  
 
 ####
 st.markdown("e-Books read during the period :")
