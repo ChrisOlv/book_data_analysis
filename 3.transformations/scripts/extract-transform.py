@@ -17,7 +17,7 @@ from dotenv import find_dotenv, load_dotenv
 import shutil
 from datetime import datetime
 from pathlib import Path
-
+load_dotenv()  
 
 # df_book_stale est la table originale et df_book_new est la table mise à jour
 
@@ -145,12 +145,16 @@ print("="*80)
 print("="*80)
 print("génération des catégories avec gpt4o en cours ")
 # load env
-load_dotenv()
+
 OPENAI_API_VERSION = os.environ["AZURE_OPENAI_API_VERSION"]
 AZURE_OPENAI_ENDPOINT= os.environ["AZURE_OPENAI_ENDPOINT"]
 AZURE_OPENAI_API_KEY = os.environ["AZURE_OPENAI_API_KEY"]
+DEPLOYMENT_NAME = os.environ["AZURE_OPENAI_DEPLOYMENT"]
 
-llm_gpt4o = AzureChatOpenAI(deployment_name="gpt4o",api_key=AZURE_OPENAI_API_KEY,api_version= "2024-02-01",temperature=0)
+
+
+
+llm_gpt4o = AzureChatOpenAI(deployment_name=DEPLOYMENT_NAME,api_key=AZURE_OPENAI_API_KEY,api_version= OPENAI_API_VERSION,temperature=0)
 
 prompt = """
 en utilisant tes connaissances, classe l'oeuvre dans une des catégories suivantes : 
@@ -518,7 +522,7 @@ if os.path.exists(sqlite_update_path):
     num_files = len([name for name in os.listdir(folder_archive_path) if os.path.isfile(os.path.join(folder_archive_path, name))])
     if num_files > 3:
         # Afficher le message avec le nombre de fichiers
-        print(f"Il y a {num_files} fichiers de sauvegarde, pense à faire du ménage, tu vas pas garder 2000 sauvegardes, tu payes pas tes bytes ou quoi ?")
+        print(f"{num_files} savefile founded in archive folder, deleting older files...")
 
     
 else:
@@ -526,6 +530,19 @@ else:
 
 
 
+
+
+
+# keep only the last 3 savefiles in the archive folder
+files = sorted(
+    [f for f in os.listdir(folder_archive_path) if os.path.isfile(os.path.join(folder_archive_path, f))],
+    key=lambda x: os.path.getmtime(os.path.join(folder_archive_path, x)),
+    reverse=True  # Sort files in descending order of modification time (newest first)
+)
+
+
+for file in files[3:]:
+    os.remove(os.path.join(folder_archive_path, file))
 
 # End the timer
 end_time = time.time()
