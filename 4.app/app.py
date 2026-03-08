@@ -68,7 +68,7 @@ Every session, every book, every page, now visualized.""")
 # Sidebar : filters
 with st.sidebar:
     st.header("Chart parameters ⚙️")
-    filter_annee = st.multiselect('Year', ['2023', '2024', '2025', "last 12 months"], default=['2024'])
+    filter_annee = st.multiselect('Year', ['2023', '2024', '2025','2026', "last 12 months"], default=['last 12 months'])
     livre_termine = st.radio("Reading status", options=["read", "unfinished", "read + unfinished"])
     filter_auteur = st.multiselect('Author', df_book_updated['Auteurs'].unique())
     filter_title = st.multiselect('Title', df_book_updated['Titre'].unique())
