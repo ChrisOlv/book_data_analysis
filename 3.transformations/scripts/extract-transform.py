@@ -232,7 +232,7 @@ prompt_annee_edition = """
 en utilisant tes connaissances, trouve la date de première parution de l'oeuvre dans sa version originale. (parfois appelée First published date).
 N'ajoute rien d'autre.
 Le format doit être AAAA.
-
+Lorsque le titre contient un numéro de tome ou un nom de tome, trouve la date de parution de ce tome et pas du tome 1
 question: {oeuvre} 
 
 catégorie:"""
