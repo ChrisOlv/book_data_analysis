@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bibliotheque de lecture</title>
+  <link href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/css/tabulator.min.css" rel="stylesheet">
+  <style>
+    :root {
+      --page-bg: #131416;
+      --panel-bg: rgba(24, 28, 32, 0.92);
+      --panel-border: rgba(221, 205, 180, 0.12);
+      --text: #f5efe4;
+      --muted: #b6ab9e;
+      --accent: #d18b59;
+      --accent-dark: #9e6237;
+      --finished-bg: rgba(90, 158, 128, 0.2);
+      --finished-text: #9fe0be;
+      --progress-bg: rgba(214, 142, 54, 0.18);
+      --progress-text: #f1bc79;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: Georgia, "Times New Roman", serif;
+      color: var(--text);
+      color-scheme: dark;
+      background:
+        radial-gradient(circle at top left, rgba(209, 139, 89, 0.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(96, 125, 139, 0.16), transparent 26%),
+        linear-gradient(135deg, #101214 0%, #171b20 42%, #1e252b 100%);
+    }
+
+    .page {
+      width: min(1180px, calc(100% - 32px));
+      margin: 32px auto;
+    }
+
+    .hero {
+      display: grid;
+      gap: 20px;
+      padding: 28px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 24px;
+      box-shadow: 0 28px 64px rgba(0, 0, 0, 0.34);
+      backdrop-filter: blur(8px);
+    }
+
+    .hero-copy h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+      line-height: 0.95;
+      letter-spacing: -0.04em;
+    }
+
+    .hero-copy p {
+      margin: 0;
+      max-width: 64ch;
+      color: var(--muted);
+      line-height: 1.55;
+      font-size: 1rem;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .stat-card {
+      padding: 16px 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(221, 205, 180, 0.08);
+    }
+
+    .stat-label {
+      display: block;
+      color: var(--muted);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-size: clamp(1.8rem, 4vw, 2.7rem);
+      line-height: 1;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      justify-content: space-between;
+      margin: 24px 0 16px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .filter-toggle {
+      border: 1px solid rgba(221, 205, 180, 0.12);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font: inherit;
+      cursor: pointer;
+      transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+    }
+
+    .filter-toggle.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #16181b;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(221, 205, 180, 0.12);
+      border-radius: 999px;
+      width: min(100%, 360px);
+    }
+
+    .search-box input {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      outline: none;
+      font: inherit;
+      color: var(--text);
+    }
+
+    .search-box input::placeholder {
+      color: var(--muted);
+    }
+
+    #book-table {
+      overflow: auto;
+      border-radius: 20px;
+      border: 1px solid rgba(221, 205, 180, 0.12);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+      background: rgba(22, 25, 29, 0.96);
+    }
+
+    .tabulator {
+      border: 0;
+      background: transparent;
+      font-size: 0.95rem;
+      color: var(--text);
+    }
+
+    .tabulator .tabulator-header {
+      border-bottom: 1px solid rgba(221, 205, 180, 0.08);
+      background: rgba(31, 35, 40, 0.98);
+    }
+
+    .tabulator .tabulator-col {
+      background: transparent;
+      border-right: 0;
+    }
+
+    .tabulator .tabulator-col-title,
+    .tabulator .tabulator-cell {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .tabulator .tabulator-row {
+      border-bottom: 1px solid rgba(221, 205, 180, 0.06);
+      background: transparent;
+    }
+
+    .tabulator .tabulator-row.tabulator-row-even {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .tabulator .tabulator-footer {
+      border-top: 1px solid rgba(221, 205, 180, 0.08);
+      background: rgba(31, 35, 40, 0.96);
+      color: var(--muted);
+    }
+
+    .tabulator .tabulator-page,
+    .tabulator .tabulator-page-size {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(221, 205, 180, 0.1);
+    }
+
+    .tabulator .tabulator-page.active {
+      background: var(--accent);
+      color: #16181b;
+    }
+
+    .tabulator input,
+    .tabulator select {
+      background: rgba(255, 255, 255, 0.04);
+      color: var(--text);
+      border: 1px solid rgba(221, 205, 180, 0.12);
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 88px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .status-pill.finished {
+      color: var(--finished-text);
+      background: var(--finished-bg);
+    }
+
+    .status-pill.progress {
+      color: var(--progress-text);
+      background: var(--progress-bg);
+    }
+
+    .footer-note {
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    @media (max-width: 720px) {
+      .page {
+        width: min(100% - 20px, 1180px);
+        margin: 20px auto;
+      }
+
+      .hero {
+        padding: 22px;
+      }
+
+      .stats {
+        grid-template-columns: 1fr;
+      }
+
+      .toolbar {
+        align-items: stretch;
+      }
+
+      .toolbar-actions {
+        width: 100%;
+      }
+
+      .search-box {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <section class="hero">
+      <div class="hero-copy">
+        <h1>Bibliotheque de lecture</h1>
+        <p>Catalogue statique genere a partir des exports ebook et de la liste papier/audio. Tri, filtre et pagination fonctionnent directement dans le navigateur, sans backend.</p>
+      </div>
+
+      <div class="stats">
+        <article class="stat-card">
+          <span class="stat-label">Livres</span>
+          <strong class="stat-value">169</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">Finis</span>
+          <strong class="stat-value">111</strong>
+        </article>
+        <article class="stat-card">
+          <span class="stat-label">En cours</span>
+          <strong class="stat-value">58</strong>
+        </article>
+      </div>
+    </section>
+
+    <section>
+      <div class="toolbar">
+        <h2>Liste des bouquins</h2>
+        <div class="toolbar-actions">
+          <button id="filter-read" class="filter-toggle" type="button" aria-pressed="false">Lu</button>
+          <label class="search-box" for="table-search">
+            <span>Recherche</span>
+            <input id="table-search" type="search" placeholder="Titre, auteur, categorie...">
+          </label>
+        </div>
+      </div>
+      <div id="book-table"></div>
+      <p class="footer-note">La colonne statut est derivee automatiquement : ebook termine si le pourcentage lu atteint 90 %, sinon en cours. Les entrees papier/audio sont considerees comme finies.</p>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/js/tabulator.min.js"></script>
+  <script>
+    const bookData = [{"Titre": "La Trilogie de Licanius, Tome 1 : L'Ombre du Savoir Perdu", "Auteurs": "James Islington", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 1023, "Date de lecture": "2026-08-14"}, {"Titre": "Livre du second soleil de Teur - 01 - L'ombre du bourreau", "Auteurs": "Gene Wolfe", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 554, "Date de lecture": "2026-08-04"}, {"Titre": "Outsphere", "Auteurs": "Guy-Roger Duvert", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 529, "Date de lecture": "2026-08-03"}, {"Titre": "boy with a scar", "Auteurs": "dirgewithoutmusic", "Catégorie": "fiction/fantastique", "Statut": "En cours", "Pages": 207, "Date de lecture": "2026-08-02"}, {"Titre": "Les Bracelets des Larmes", "Auteurs": "Brandon Sanderson", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 1158, "Date de lecture": "2026-08-01"}, {"Titre": "Seventh Horcrux", "Auteurs": "EmeraldAshes", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 760, "Date de lecture": "2026-08-01"}, {"Titre": "Les légions immortelles", "Auteurs": "Scott Westerfeld", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 567, "Date de lecture": "2026-07-16"}, {"Titre": "Peeps - 01 - V-virus", "Auteurs": "Westerfeld Scott", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 454, "Date de lecture": "2026-07-05"}, {"Titre": "Journal d'un AssaSynth, Tome 4 : Stratégie de sortie", "Auteurs": "Martha Wells", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 167, "Date de lecture": "2026-06-30"}, {"Titre": "Les enfermés", "Auteurs": "Scalzi John", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 501, "Date de lecture": "2026-06-30"}, {"Titre": "La Brume l'emportera", "Auteurs": "Stéphane Arnier", "Catégorie": "fiction/fantastique", "Statut": "Fini", "Pages": 632, "Date de lecture": "2026-06-14"}, {"Titre": "Les Salauds Gentilshommes, T1 : Les Mensonges de Locke Lamora", "Auteurs": "Scott Lynch", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 1272, "Date de lecture": "2026-05-25"}, {"Titre": "Les Jardins de la Lune", "Auteurs": "Steven Erikson", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 1082, "Date de lecture": "2026-04-30"}, {"Titre": "Happy Place", "Auteurs": "Emily Henry", "Catégorie": "fiction/romance", "Statut": "En cours", "Pages": 612, "Date de lecture": "2026-04-26"}, {"Titre": "Piranèse", "Auteurs": "Susanna Clarke", "Catégorie": "fiction/fantastique", "Statut": "En cours", "Pages": 319, "Date de lecture": "2026-04-26"}, {"Titre": "Le cycle des princes d'Ambre (Tome 1) - Les Neuf Princes d'Ambre", "Auteurs": "Roger Zelazny", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 355, "Date de lecture": "2026-04-22"}, {"Titre": "Le sommeil du jeune enfant", "Auteurs": "Héloïse Junier", "Catégorie": "non-fiction/parenting", "Statut": "En cours", "Pages": 413, "Date de lecture": "2026-04-04"}, {"Titre": "Vent et vérité, tome 2 : Les Archives de Roshar", "Auteurs": "Mélanie Fazi", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 1546, "Date de lecture": "2026-03-29"}, {"Titre": "La Bibliothèque de Minuit", "Auteurs": "Matt Haig", "Catégorie": "fiction/fantastique", "Statut": "Fini", "Pages": 523, "Date de lecture": "2026-03-08"}, {"Titre": "Les Archives de Roshar - Livre V : Vent et Vérité 1", "Auteurs": "Mélanie Fazi", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 1765, "Date de lecture": "2026-03-03"}, {"Titre": "La frontière avenir", "Auteurs": "Henry-Luc Planchat", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 603, "Date de lecture": "2026-02-12"}, {"Titre": "Magie brute", "Auteurs": "Correia Larry", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 662, "Date de lecture": "2026-02-06"}, {"Titre": "Dungeon Crawler Carl : Le Portail des dieux infernaux - Tome 4 : une aventure de LitRPG. Saga de science-fiction et fantasy post apocalyptique aux millions de lecteurs, Livre nouveauté 2025", "Auteurs": "Chloé Atangana", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 873, "Date de lecture": "2026-01-31"}, {"Titre": "Le livre de recettes de l’Anarchiste", "Auteurs": "Chloé Atangana", "Catégorie": "non-fiction/lifestyle", "Statut": "En cours", "Pages": 797, "Date de lecture": "2026-01-18"}, {"Titre": "Dungeon Crawler Carl - Tome 2", "Auteurs": "Chloé Atangana", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 541, "Date de lecture": "2026-01-14"}, {"Titre": "Dungeon Crawler Carl", "Auteurs": "Chloé Atangana", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 677, "Date de lecture": "2026-01-09"}, {"Titre": "Le chevalier", "Auteurs": "Wolfe Gene", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 863, "Date de lecture": "2026-01-01"}, {"Titre": "Loué soit l'exil", "Auteurs": "Vonda McIntyre", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 420, "Date de lecture": "2025-12-24"}, {"Titre": "Les enfants sont calmes", "Auteurs": "Christine Barbaste", "Catégorie": "non-fiction/parenting", "Statut": "Fini", "Pages": 387, "Date de lecture": "2025-12-23"}, {"Titre": "Méridien de sang", "Auteurs": "Cormac McCarthy", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 694, "Date de lecture": "2025-12-19"}, {"Titre": "Les Hurleuses:", "Auteurs": "Adrien Tomas", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 698, "Date de lecture": "2025-12-18"}, {"Titre": "Conversations entre amis", "Auteurs": "Sally Rooney", "Catégorie": "non-fiction/lifestyle", "Statut": "Fini", "Pages": 451, "Date de lecture": "2025-12-17"}, {"Titre": "Normal People", "Auteurs": "Perfection Learning", "Catégorie": "fiction/romance", "Statut": "Fini", "Pages": 396, "Date de lecture": "2025-12-13"}, {"Titre": "Chien 51", "Auteurs": "Laurent Gaudé", "Catégorie": "", "Statut": "Fini", "Pages": 235, "Date de lecture": "2025-12-12"}, {"Titre": "The Ministry of Time: A Novel", "Auteurs": "Kaliane Bradley", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 517, "Date de lecture": "2025-12-09"}, {"Titre": "Warbreaker", "Auteurs": "Brandon Sanderson", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 1040, "Date de lecture": "2025-12-07"}, {"Titre": "Warbreaker", "Auteurs": "Brandon Sanderson", "Catégorie": "", "Statut": "Fini", "Pages": 688, "Date de lecture": "2025-12-07"}, {"Titre": "The Data Warehouse Toolkit, 3rd Edition", "Auteurs": "Ralph Kimball", "Catégorie": "non-fiction/histoire", "Statut": "En cours", "Pages": 987, "Date de lecture": "2025-12-06"}, {"Titre": "Le Pouvoir rhétorique", "Auteurs": "Clément Viktorovitch", "Catégorie": "non-fiction/lifestyle", "Statut": "En cours", "Pages": 801, "Date de lecture": "2025-11-18"}, {"Titre": "Rythme de guerre - 2", "Auteurs": "Brandon Sanderson", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 1636, "Date de lecture": "2025-11-12"}, {"Titre": "Rythme de guerre 1", "Auteurs": "Brandon Sanderson", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 1483, "Date de lecture": "2025-10-25"}, {"Titre": "Justicière 2", "Auteurs": "Brandon Sanderson", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 1706, "Date de lecture": "2025-10-11"}, {"Titre": "Roshar 3 : Justicière T2", "Auteurs": "Brandon Sanderson", "Catégorie": "", "Statut": "Fini", "Pages": "", "Date de lecture": "2025-10-11"}, {"Titre": "Justicière T1", "Auteurs": "Sanderson Brandon", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 1409, "Date de lecture": "2025-09-22"}, {"Titre": "Roshar 3 : Justicière T1", "Auteurs": "Brandon Sanderson", "Catégorie": "", "Statut": "Fini", "Pages": "", "Date de lecture": "2025-09-21"}, {"Titre": "Elantris - 03 - L'Ame de l'Empereur", "Auteurs": "Sanderson Brandon", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 204, "Date de lecture": "2025-09-06"}, {"Titre": "Roshar 2 : Le livre des Radieux T2", "Auteurs": "Brandon Sanderson", "Catégorie": "", "Statut": "Fini", "Pages": "", "Date de lecture": "2025-09-06"}, {"Titre": "Roshar 2 : Le livre des Radieux T1", "Auteurs": "Brandon Sanderson", "Catégorie": "", "Statut": "Fini", "Pages": "", "Date de lecture": "2025-09-05"}, {"Titre": "Roshar 1 : La Voie Des Rois T2", "Auteurs": "Brandon Sanderson", "Catégorie": "", "Statut": "Fini", "Pages": "", "Date de lecture": "2025-08-19"}, {"Titre": "Roshar 1 : La Voie Des Rois T1", "Auteurs": "Brandon Sanderson", "Catégorie": "", "Statut": "Fini", "Pages": "", "Date de lecture": "2025-07-31"}, {"Titre": "CDM1 - Les royaumes du Nord", "Auteurs": "Philip Pullman", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 608, "Date de lecture": "2025-07-13"}, {"Titre": "Watchmen", "Auteurs": "Alan Moore and Dave Gibbons", "Catégorie": "", "Statut": "Fini", "Pages": 448, "Date de lecture": "2025-07-10"}, {"Titre": "La Malediction du Rogue", "Auteurs": "Donaldson Stephen", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 824, "Date de lecture": "2025-07-01"}, {"Titre": "Chiens de guerre", "Auteurs": "Adrian Tchaikovsky", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 497, "Date de lecture": "2025-06-29"}, {"Titre": "Avis de tempête: Les Dossiers Dresden", "Auteurs": "Jim Butcher", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 406, "Date de lecture": "2025-06-21"}, {"Titre": "Lune Obscure sur Babylone", "Auteurs": "Michael McDowell", "Catégorie": "", "Statut": "Fini", "Pages": 460, "Date de lecture": "2025-06-02"}, {"Titre": "La controverse de Zara XXIII", "Auteurs": "John Scalzi", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 400, "Date de lecture": "2025-05-23"}, {"Titre": "Superluminal", "Auteurs": "Vonda Neel", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 511, "Date de lecture": "2025-05-18"}, {"Titre": "Le château de Hurle", "Auteurs": "Diana Wynne", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 340, "Date de lecture": "2025-05-12"}, {"Titre": "Skyward - T4 - Rebelle", "Auteurs": "Brandon Sanderson", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 802, "Date de lecture": "2025-04-07"}, {"Titre": "Starship Troopers", "Auteurs": "Robert Heinlein", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 433, "Date de lecture": "2025-03-29"}, {"Titre": "Skyward T2.5 : Missions stellaires", "Auteurs": "Sanderson Brandon", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 1221, "Date de lecture": "2025-03-23"}, {"Titre": "Prise de tête", "Auteurs": "John Scalzi", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 422, "Date de lecture": "2025-03-11"}, {"Titre": "La maison des feuilles", "Auteurs": "Mark Danielewski", "Catégorie": "", "Statut": "Fini", "Pages": 650, "Date de lecture": "2025-03-01"}, {"Titre": "Le Maître des illusions", "Auteurs": "Donna Tartt", "Catégorie": "fiction/fantastique", "Statut": "Fini", "Pages": 885, "Date de lecture": "2025-02-13"}, {"Titre": "Nous sommes Bob, T1 : Nous sommes Légion", "Auteurs": "Dennis Taylor", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 593, "Date de lecture": "2025-02-02"}, {"Titre": "Roi Sorcier", "Auteurs": "Martha Wells", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 634, "Date de lecture": "2025-01-29"}, {"Titre": "La Dernière Emperox: L'Interdépendance, T3", "Auteurs": "John Scalzi", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 402, "Date de lecture": "2025-01-27"}, {"Titre": "roman secret 4 - L'ensoleillé", "Auteurs": "Brandon Sanderson", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 732, "Date de lecture": "2025-01-23"}, {"Titre": "Les Flammes de l'empire: L'Interdépendance, T2", "Auteurs": "John Scalzi", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 462, "Date de lecture": "2025-01-21"}, {"Titre": "L'effondrement de l'empire", "Auteurs": "John Scalzi", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 405, "Date de lecture": "2025-01-18"}, {"Titre": "La Machine à explorer le temps", "Auteurs": "Wells", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 185, "Date de lecture": "2025-01-15"}, {"Titre": "La guerre du pavot", "Auteurs": "Kuang", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 1021, "Date de lecture": "2025-01-14"}, {"Titre": "Yellowface", "Auteurs": "Rebecca Kuang", "Catégorie": "fiction/littérature contemporaine", "Statut": "Fini", "Pages": 502, "Date de lecture": "2025-01-11"}, {"Titre": "Un palais d'épines et de roses, tome 1", "Auteurs": "Sarah Maas", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 620, "Date de lecture": "2025-01-06"}, {"Titre": "Journal d'un AssaSynth, Tome 2 : Schémas artificiels", "Auteurs": "Martha Wells", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 156, "Date de lecture": "2025-01-05"}, {"Titre": "La Société protectrice des kaijus", "Auteurs": "John Scalzi", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 433, "Date de lecture": "2025-01-03"}, {"Titre": "Résister", "Auteurs": "Salomé Saqué", "Catégorie": "non-fiction/société", "Statut": "En cours", "Pages": 151, "Date de lecture": "2024-12-30"}, {"Titre": "Superméchant débutant", "Auteurs": "John Scalzi", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 379, "Date de lecture": "2024-12-29"}, {"Titre": "La Maison au milieu de la Mer céruléenne (ebook)", "Auteurs": "Klune", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 699, "Date de lecture": "2024-12-25"}, {"Titre": "L'Encyclopédie féérique tome 2 : L'Atlas des Autreterres d'Emily Wilde", "Auteurs": "Heather Fawcett", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 491, "Date de lecture": "2024-12-19"}, {"Titre": "L’Encyclopédie féerique d’Emily Wilde", "Auteurs": "Heather Fawcett", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 538, "Date de lecture": "2024-12-19"}, {"Titre": "Blackwater T6 : Pluie", "Auteurs": "Michael McDowell", "Catégorie": "fiction/fantastique", "Statut": "Fini", "Pages": 283, "Date de lecture": "2024-12-11"}, {"Titre": "Sagas & sable d’os : Une histoire du Légendes & Lattes", "Auteurs": "Travis Baldtree", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 515, "Date de lecture": "2024-12-06"}, {"Titre": "Blackwater 5 – La Fortune: L'épique saga de la famille Caskey", "Auteurs": "Michael McDowell", "Catégorie": "fiction/fantastique", "Statut": "Fini", "Pages": 291, "Date de lecture": "2024-11-29"}, {"Titre": "Défaillances systèmes", "Auteurs": "Martha Wells", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 175, "Date de lecture": "2024-11-27"}, {"Titre": "Minimalisme numérique", "Auteurs": "Cal Newport", "Catégorie": "non-fiction/lifestyle", "Statut": "En cours", "Pages": 400, "Date de lecture": "2024-11-24"}, {"Titre": "Tehanu", "Auteurs": "Ursula Guin", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 351, "Date de lecture": "2024-11-24"}, {"Titre": "Voyageur 4 : La Galaxie vue du sol", "Auteurs": "Becky Chambers", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 400, "Date de lecture": "2024-11-24"}, {"Titre": "Projet secret T2 : Manuel de Survie du Sorcier Frugal dans l'Angleterre médiévale", "Auteurs": "Brandon Sanderson", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 636, "Date de lecture": "2024-11-12"}, {"Titre": "Blackwater 4 – La Guerre: L'épique saga de la famille Caskey", "Auteurs": "Michael McDowell", "Catégorie": "fiction/fantastique", "Statut": "Fini", "Pages": 257, "Date de lecture": "2024-11-02"}, {"Titre": "Voyageur 3 : Archives de l'exode", "Auteurs": "Becky Chambers", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 441, "Date de lecture": "2024-10-23"}, {"Titre": "Blackwater 3 – La Maison: L'épique saga de la famille Caskey", "Auteurs": "Michael McDowell", "Catégorie": "fiction/fantastique", "Statut": "Fini", "Pages": 213, "Date de lecture": "2024-10-08"}, {"Titre": "Voyageur 2 : Libration", "Auteurs": "Becky Chambers", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 504, "Date de lecture": "2024-10-03"}, {"Titre": "Le monstre de la caverne", "Auteurs": "HP Lovecraft", "Catégorie": "", "Statut": "Fini", "Pages": 100, "Date de lecture": "2024-09-30"}, {"Titre": "La tombe", "Auteurs": "HP Lovecraft", "Catégorie": "", "Statut": "Fini", "Pages": 100, "Date de lecture": "2024-09-29"}, {"Titre": "Voyageur 1 : L'Espace d'un an", "Auteurs": "Becky Chambers", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 789, "Date de lecture": "2024-09-29"}, {"Titre": "Histoires de moine et de robot T2 : Une prière pour les cimes timides", "Auteurs": "Becky Chambers", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 139, "Date de lecture": "2024-09-23"}, {"Titre": "Roog", "Auteurs": "Philipp K Dick", "Catégorie": "", "Statut": "Fini", "Pages": 100, "Date de lecture": "2024-09-19"}, {"Titre": "Stabilité", "Auteurs": "Philip K Dick", "Catégorie": "", "Statut": "Fini", "Pages": 100, "Date de lecture": "2024-09-19"}, {"Titre": "Le livre des choses perdues", "Auteurs": "John Connolly", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 480, "Date de lecture": "2024-09-09"}, {"Titre": "Blackwater 2 - La digue", "Auteurs": "Michael McDowell", "Catégorie": "fiction/fantastique", "Statut": "Fini", "Pages": 225, "Date de lecture": "2024-08-20"}, {"Titre": "Blackwater 1 - La crue: L'épique saga de la famille Caskey", "Auteurs": "Michael McDowell", "Catégorie": "fiction/fantastique", "Statut": "Fini", "Pages": 248, "Date de lecture": "2024-08-18"}, {"Titre": "Leviathan Wakes - the expanse 1", "Auteurs": "James Corey", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 823, "Date de lecture": "2024-08-11"}, {"Titre": "Atomic Habits: An Easy & Proven Way to Build Good Habits & Break Bad Ones", "Auteurs": "James Clear", "Catégorie": "non-fiction/lifestyle", "Statut": "En cours", "Pages": 482, "Date de lecture": "2024-08-08"}, {"Titre": "Pouvoir, politique et esprits frappeurs enquiquinants", "Auteurs": "Rowling", "Catégorie": "fiction/fantastique", "Statut": "En cours", "Pages": 59, "Date de lecture": "2024-08-03"}, {"Titre": "Les Variations Sebastian", "Auteurs": "Emily John", "Catégorie": "fiction/fantastique", "Statut": "Fini", "Pages": 471, "Date de lecture": "2024-08-02"}, {"Titre": "Roman secret 3 - Yumi et le peintre de cauchemars", "Auteurs": "Brandon Sanderson", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 798, "Date de lecture": "2024-07-29"}, {"Titre": "Légendes et lattes", "Auteurs": "Travis Baldree", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 397, "Date de lecture": "2024-07-18"}, {"Titre": "Tobie Lolness T2 - Les Yeux d’Elisha", "Auteurs": "Timothée de Fombelle", "Catégorie": "", "Statut": "Fini", "Pages": 400, "Date de lecture": "2024-07-15"}, {"Titre": "La mer de la tranquillité", "Auteurs": "Emily John", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 342, "Date de lecture": "2024-07-07"}, {"Titre": "Terremer 2 Tehanu", "Auteurs": "Ursula Guin", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 351, "Date de lecture": "2024-07-07"}, {"Titre": "The Everyday Parenting Toolkit", "Auteurs": "Alan Kazdin", "Catégorie": "non-fiction/parenting", "Statut": "En cours", "Pages": 390, "Date de lecture": "2024-06-30"}, {"Titre": "Tobie Lolness T1 - La Vie suspendue", "Auteurs": "Timothée de Fombelle", "Catégorie": "", "Statut": "Fini", "Pages": 292, "Date de lecture": "2024-06-30"}, {"Titre": "L'hôtel de verre", "Auteurs": "Emily John", "Catégorie": "fiction/fantastique", "Statut": "Fini", "Pages": 462, "Date de lecture": "2024-06-29"}, {"Titre": "Récursion", "Auteurs": "Blake Crouch", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 523, "Date de lecture": "2024-06-21"}, {"Titre": "Tress de la mer Emeraude", "Auteurs": "Brandon Sanderson", "Catégorie": "", "Statut": "Fini", "Pages": 645, "Date de lecture": "2024-06-20"}, {"Titre": "Un psaume pour les recyclés sauvages", "Auteurs": "Becky Chambers", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 157, "Date de lecture": "2024-06-20"}, {"Titre": "Les Oiseaux du Temps", "Auteurs": "Amal El-Mohtar", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 277, "Date de lecture": "2024-06-16"}, {"Titre": "CN4 Jeux d'ombres", "Auteurs": "Glen Cook", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 542, "Date de lecture": "2024-06-11"}, {"Titre": "Héroïsme, tribulations et passe-temps dangereux", "Auteurs": "Rowling", "Catégorie": "fiction/fantastique", "Statut": "En cours", "Pages": 58, "Date de lecture": "2024-06-10"}, {"Titre": "Skyward 0.5 - Un paradis à défendre", "Auteurs": "Brandon Sanderson", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 86, "Date de lecture": "2024-06-10"}, {"Titre": "Janua Vera", "Auteurs": "Jean-Philippe Jaworski", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 744, "Date de lecture": "2024-06-07"}, {"Titre": "Station Eleven", "Auteurs": "Emily John", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 568, "Date de lecture": "2024-06-02"}, {"Titre": "A Princess of Mars", "Auteurs": "Edgar Rice", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 557, "Date de lecture": "2024-05-27"}, {"Titre": "Des fleurs pour Algernon", "Auteurs": "Daniel Keyes", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 456, "Date de lecture": "2024-05-27"}, {"Titre": "Skyward T3 : Cytonique", "Auteurs": "Brandon Sanderson", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 766, "Date de lecture": "2024-05-24"}, {"Titre": "Trois corps – 01 – Le problème à trois corps", "Auteurs": "Liu Cixin", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 745, "Date de lecture": "2024-05-15"}, {"Titre": "Le Chasch", "Auteurs": "Vance Jack", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 266, "Date de lecture": "2024-05-03"}, {"Titre": "Marche ou crève", "Auteurs": "King Stephen", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 429, "Date de lecture": "2024-04-28"}, {"Titre": "Titus d'enfer", "Auteurs": "Mervyn Peake", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 883, "Date de lecture": "2024-04-28"}, {"Titre": "L'Enchanteur", "Auteurs": "Barjavel René", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 572, "Date de lecture": "2024-04-22"}, {"Titre": "Dans la toile du temps", "Auteurs": "Adrian Tchaikovsky", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 888, "Date de lecture": "2024-04-08"}, {"Titre": "la route", "Auteurs": "Cormac McCarthy", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 385, "Date de lecture": "2024-03-19"}, {"Titre": "Ravage", "Auteurs": "René Barjavel", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 330, "Date de lecture": "2024-03-18"}, {"Titre": "La cinquième saison", "Auteurs": "Nora Jemisin", "Catégorie": "fiction/fantasy", "Statut": "En cours", "Pages": 759, "Date de lecture": "2024-03-12"}, {"Titre": "Le troupeau aveugle, 1", "Auteurs": "John Brunner", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 382, "Date de lecture": "2024-03-10"}, {"Titre": "Hommage à la Catalogne", "Auteurs": "George Orwell", "Catégorie": "non-fiction/histoire", "Statut": "En cours", "Pages": 400, "Date de lecture": "2024-03-09"}, {"Titre": "Le sorcier de Terremer", "Auteurs": "Ursula Guin", "Catégorie": "fiction/fantasy", "Statut": "Fini", "Pages": 337, "Date de lecture": "2024-03-07"}, {"Titre": "Le manuel de survie des parents", "Auteurs": "Héloïse Junier", "Catégorie": "non-fiction/parenting", "Statut": "Fini", "Pages": 476, "Date de lecture": "2024-03-01"}, {"Titre": "Red Rising", "Auteurs": "Pierce Brown", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 636, "Date de lecture": "2024-02-29"}, {"Titre": "Il n'y a pas de parent parfait", "Auteurs": "Isabelle Filliozat", "Catégorie": "non-fiction/parenting", "Statut": "En cours", "Pages": 445, "Date de lecture": "2024-02-25"}, {"Titre": "La Chute d'Hypérion: Le cycle d'Hypérion - Tome 2", "Auteurs": "Dan Simmons", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 1332, "Date de lecture": "2024-02-22"}, {"Titre": "Hypérion v1.1", "Auteurs": "Dan Simmons", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 1034, "Date de lecture": "2024-01-28"}, {"Titre": "Chasseur, cueilleur, parent: les cultures ancestrales excellent dans l’art d’élever des humains heureux: qu’ont-elles à nous apprendre?", "Auteurs": "Michaeleen Doucleff", "Catégorie": "non-fiction/parenting", "Statut": "En cours", "Pages": 675, "Date de lecture": "2024-01-09"}, {"Titre": "La faune de l'espace", "Auteurs": "Van Vogt", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 809, "Date de lecture": "2024-01-08"}, {"Titre": "La nuit des temps", "Auteurs": "Barjavel René", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 449, "Date de lecture": "2024-01-08"}, {"Titre": "Le crime de l'Orient-Express", "Auteurs": "Christie Agatha", "Catégorie": "fiction/SF", "Statut": "Fini", "Pages": 349, "Date de lecture": "2023-11-27"}, {"Titre": "Let's Get Together", "Auteurs": "Isaac Asimov", "Catégorie": "fiction/SF", "Statut": "En cours", "Pages": 68, "Date de lecture": "2023-11-27"}, {"Titre": "Le Porteur de lumière tome 2", "Auteurs": "Brent Weeks", "Catégorie": "", "Statut": "Fini", "Pages": 0, "Date de lecture": "2023-09-16"}, {"Titre": "Je suis une légende", "Auteurs": "Richard Matheson", "Catégorie": "", "Statut": "Fini", "Pages": 0, "Date de lecture": "2023-09-08"}, {"Titre": "L'Ickabog", "Auteurs": "J K Rowling", "Catégorie": "", "Statut": "Fini", "Pages": 0, "Date de lecture": "2023-08-24"}, {"Titre": "Une place à prendre", "Auteurs": "J.K. Rowling", "Catégorie": "", "Statut": "Fini", "Pages": 682, "Date de lecture": "2023-08-09"}, {"Titre": "La part des Ombres 1", "Auteurs": "Gabriel Katz", "Catégorie": "", "Statut": "Fini", "Pages": 346, "Date de lecture": "2023-08-05"}, {"Titre": "Les archives de Roshar, tome 4.2 : Rythme de guerre 2", "Auteurs": "Brandon Sanderson", "Catégorie": "", "Statut": "Fini", "Pages": 1200, "Date de lecture": "2023-07-26"}, {"Titre": "Tyrann", "Auteurs": "Isaac Asimov", "Catégorie": "", "Statut": "Fini", "Pages": 312, "Date de lecture": "2023-07-09"}, {"Titre": "Les Annales de la Compagnie Noire, Tome 3", "Auteurs": "Glen Cook", "Catégorie": "", "Statut": "Fini", "Pages": 0, "Date de lecture": "2023-06-10"}, {"Titre": "Les Annales de la Compagnie Noire, Tome 2", "Auteurs": "Glen Cook", "Catégorie": "", "Statut": "Fini", "Pages": 0, "Date de lecture": "2023-05-21"}, {"Titre": "Les archives de Roshar, tome 4.1 : Rythme de guerre 1", "Auteurs": "Brandon Sanderson", "Catégorie": "", "Statut": "Fini", "Pages": 736, "Date de lecture": "2023-05-06"}, {"Titre": "Eclat de L'aube (Roshar 3.5)", "Auteurs": "Brandon Sanderson", "Catégorie": "", "Statut": "Fini", "Pages": 320, "Date de lecture": "2023-04-07"}, {"Titre": "De bons présages (Good Omens)", "Auteurs": "Neil Gaiman", "Catégorie": "", "Statut": "Fini", "Pages": 439, "Date de lecture": "2023-04-02"}, {"Titre": "Fils des brumes, tome 5 : Jeux de masques", "Auteurs": "Brandon Sanderson", "Catégorie": "", "Statut": "Fini", "Pages": 576, "Date de lecture": "2023-02-26"}, {"Titre": "Fils des brumes, tome 4 :  L'alliage de la justice", "Auteurs": "Brandon Sanderson", "Catégorie": "", "Statut": "Fini", "Pages": 456, "Date de lecture": "2023-02-11"}, {"Titre": "L'Océan au bout du chemin", "Auteurs": "Neil Gaiman", "Catégorie": "", "Statut": "Fini", "Pages": 181, "Date de lecture": "2023-02-05"}, {"Titre": "Le Prieuré de l'Oranger T1 partie 2", "Auteurs": "Samantha Shannon", "Catégorie": "", "Statut": "Fini", "Pages": 569, "Date de lecture": "2023-01-21"}, {"Titre": "Le Prieuré de l'Oranger T1 partie 1", "Auteurs": "Samantha Shannon", "Catégorie": "", "Statut": "Fini", "Pages": 572, "Date de lecture": "2023-01-07"}, {"Titre": "Promised neverland (manga)", "Auteurs": "", "Catégorie": "", "Statut": "Fini", "Pages": "", "Date de lecture": ""}, {"Titre": "Samourai virtuel", "Auteurs": "Neal Stephenson", "Catégorie": "", "Statut": "Fini", "Pages": 569, "Date de lecture": ""}, {"Titre": "widowland", "Auteurs": "C.J. Carey", "Catégorie": "", "Statut": "Fini", "Pages": 432, "Date de lecture": ""}];
+
+    const statusFormatter = (cell) => {
+      const value = cell.getValue() || "";
+      const cssClass = value === "Fini" ? "finished" : "progress";
+      return `<span class="status-pill ${cssClass}">${value}</span>`;
+    };
+
+    const table = new Tabulator("#book-table", {
+      data: bookData,
+      layout: "fitDataTable",
+      responsiveLayout: false,
+      pagination: true,
+      paginationSize: 50,
+      paginationSizeSelector: [25, 50, 100],
+      movableColumns: true,
+      initialSort: [
+        { column: "Date de lecture", dir: "desc" },
+      ],
+      columns: [
+        { title: "Titre", field: "Titre", width: 320, headerFilter: true, tooltip: true },
+        { title: "Auteur(s)", field: "Auteurs", minWidth: 180, headerFilter: true },
+        { title: "Categorie", field: "Catégorie", minWidth: 150, headerFilter: true },
+        { title: "Statut", field: "Statut", width: 130, formatter: statusFormatter, hozAlign: "center", headerFilter: "list", headerFilterParams: { valuesLookup: true, clearable: true } },
+        { title: "Pages", field: "Pages", width: 110, hozAlign: "right", sorter: "number" },
+        { title: "Date lecture", field: "Date de lecture", width: 140, sorter: "date" },
+      ],
+    });
+
+    const searchInput = document.getElementById("table-search");
+    const readFilterButton = document.getElementById("filter-read");
+    let showReadOnly = false;
+
+    const applyTopFilters = () => {
+      const query = searchInput.value.toLowerCase().trim();
+      if (!query && !showReadOnly) {
+        table.clearFilter();
+        return;
+      }
+
+      table.setFilter((data) => {
+        const matchesSearch = !query || Object.values(data).some((value) => String(value ?? "").toLowerCase().includes(query));
+        const matchesRead = !showReadOnly || data["Statut"] === "Fini";
+        return matchesSearch && matchesRead;
+      });
+    };
+
+    searchInput.addEventListener("input", () => {
+      applyTopFilters();
+    });
+
+    readFilterButton.addEventListener("click", () => {
+      showReadOnly = !showReadOnly;
+      readFilterButton.classList.toggle("active", showReadOnly);
+      readFilterButton.setAttribute("aria-pressed", String(showReadOnly));
+      applyTopFilters();
+    });
+  </script>
+</body>
+</html>

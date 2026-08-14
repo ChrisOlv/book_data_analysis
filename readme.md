@@ -80,6 +80,12 @@ You should see the interactive dashboard in your browser.
 
 If you do not have real data, the app will fallback to demo datasets (*_demo.parquet) to allow testing.
 
+### 5. Generate the static HTML book list
+```bash
+python scripts/generate_static.py
+```
+This creates `output/booklist.html`, a static dark-mode page with a searchable and filterable table of books that can be hosted directly on a NAS without running Streamlit.
+
 ![img](5.github/img/image4.png)
 
 
@@ -92,6 +98,8 @@ Author & series tracking: identify favorite authors and series.
 Interactive charts: powered by Plotly Express.
 
 Experimentation page: try new ideas without affecting the main app.
+
+Static HTML export: generate a standalone book list page for simple NAS hosting.
 
 ![](5.github/img/image5.png)
 
