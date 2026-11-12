@@ -80,6 +80,18 @@ You should see the interactive dashboard in your browser.
 
 If you do not have real data, the app will fallback to demo datasets (*_demo.parquet) to allow testing.
 
+### Transform your reading data
+
+Place your reader's `statistics.sqlite3` in `1.data/1.raw/sqlite/`, then run:
+
+```bash
+python 3.transformations/scripts/extract-transform.py
+```
+
+GPT enrichment of book categories and first publication dates is optional. Without a complete Azure OpenAI configuration, or if an API request fails, the transformation continues and exports the reading data. Existing and successfully generated values are retained; missing values remain empty and can be filled during a later run. A successful run also archives the input SQLite file.
+
+To enable enrichment, install `python-dotenv` and `langchain-openai`, then set `AZURE_OPENAI_API_KEY`, `AZURE_OPENAI_ENDPOINT`, `AZURE_OPENAI_API_VERSION`, and `AZURE_OPENAI_DEPLOYMENT` in the environment or a local `.env` file. Never commit your credentials.
+
 ### 5. Generate the static HTML book list
 ```bash
 python scripts/generate_static.py

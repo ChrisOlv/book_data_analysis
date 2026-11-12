@@ -7,17 +7,17 @@ import subprocess
 import sys
 import sqlite3
 import pandas as pd
-from langchain_core.output_parsers import StrOutputParser
-from langchain_core.runnables import RunnablePassthrough
-from langchain_core.prompts import PromptTemplate
-from langchain_openai import AzureChatOpenAI
-from langchain_openai import AzureOpenAIEmbeddings
 import os
-from dotenv import find_dotenv, load_dotenv
 import shutil
 from datetime import datetime
 from pathlib import Path
-load_dotenv()  
+
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    pass
+else:
+    load_dotenv()
 
 # df_book_stale est la table originale et df_book_new est la table mise à jour
 
@@ -146,15 +146,44 @@ print("="*80)
 print("génération des catégories avec gpt4o en cours ")
 # load env
 
-OPENAI_API_VERSION = os.environ["AZURE_OPENAI_API_VERSION"]
-AZURE_OPENAI_ENDPOINT= os.environ["AZURE_OPENAI_ENDPOINT"]
-AZURE_OPENAI_API_KEY = os.environ["AZURE_OPENAI_API_KEY"]
-DEPLOYMENT_NAME = os.environ["AZURE_OPENAI_DEPLOYMENT"]
+azure_settings = {
+    name: os.environ.get(name, '').strip()
+    for name in ('AZURE_OPENAI_API_VERSION', 'AZURE_OPENAI_ENDPOINT',
+                 'AZURE_OPENAI_API_KEY', 'AZURE_OPENAI_DEPLOYMENT')
+}
+llm_gpt4o = None
+if all(azure_settings.values()):
+    try:
+        from langchain_core.output_parsers import StrOutputParser
+        from langchain_core.runnables import RunnablePassthrough
+        from langchain_core.prompts import PromptTemplate
+        from langchain_openai import AzureChatOpenAI
+        from openai import APIError
+
+        llm_gpt4o = AzureChatOpenAI(
+            deployment_name=azure_settings['AZURE_OPENAI_DEPLOYMENT'],
+            azure_endpoint=azure_settings['AZURE_OPENAI_ENDPOINT'],
+            api_key=azure_settings['AZURE_OPENAI_API_KEY'],
+            api_version=azure_settings['AZURE_OPENAI_API_VERSION'],
+            temperature=0,
+            max_retries=0,
+        )
+    except (ImportError, ValueError) as error:
+        print(f"Enrichissement GPT désactivé : configuration ou dépendance invalide ({type(error).__name__}).")
+else:
+    print("Enrichissement GPT désactivé : configuration Azure OpenAI incomplète.")
 
 
-
-
-llm_gpt4o = AzureChatOpenAI(deployment_name=DEPLOYMENT_NAME,api_key=AZURE_OPENAI_API_KEY,api_version= OPENAI_API_VERSION,temperature=0)
+def enrich_with_gpt(chain, oeuvre, current_value):
+    global llm_gpt4o
+    if llm_gpt4o is None:
+        return current_value
+    try:
+        return chain.invoke(oeuvre)
+    except APIError as error:
+        print(f"Enrichissement GPT désactivé après une erreur API ({type(error).__name__}).")
+        llm_gpt4o = None
+        return current_value
 
 prompt = """
 en utilisant tes connaissances, classe l'oeuvre dans une des catégories suivantes : 
@@ -178,22 +207,18 @@ Blackwater 1 - La crue - Michael McDowell = fiction/fantastique
 question: {oeuvre} 
 
 catégorie:"""
-rag_prompt_1 = PromptTemplate.from_template(prompt)
-
-# langchain :
-chain_category = (
-    {"oeuvre": RunnablePassthrough()}
-    | rag_prompt_1
-    | llm_gpt4o
-    | StrOutputParser()
-)
+chain_category = None
+if llm_gpt4o is not None:
+    rag_prompt_1 = PromptTemplate.from_template(prompt)
+    chain_category = (
+        {"oeuvre": RunnablePassthrough()}
+        | rag_prompt_1
+        | llm_gpt4o
+        | StrOutputParser()
+    )
 
 	
 # fonction pour créer une colonne catégorie
-def find_category(oeuvre):
-    result = chain_category.invoke(oeuvre)
-    return result
-
 # print le nombre de ligne de df_updated dont la colonne 'categorie' est ""
 nb_books_sans_categories = df_updated[(df_updated['categorie'] == '') | (pd.isna(df_updated['categorie']))].shape[0]
 
@@ -201,7 +226,7 @@ nb_books_sans_categories = df_updated[(df_updated['categorie'] == '') | (pd.isna
 
 
 df_updated['categorie'] = df_updated.apply(
-    lambda row: find_category(row['oeuvre']) if pd.isna(row['categorie']) or row['categorie'] == '' else row['categorie'],
+    lambda row: enrich_with_gpt(chain_category, row['oeuvre'], row['categorie']) if pd.isna(row['categorie']) or row['categorie'] == '' else row['categorie'],
     axis=1
 )
 
@@ -236,21 +261,15 @@ Lorsque le titre contient un numéro de tome ou un nom de tome, trouve la date d
 question: {oeuvre} 
 
 catégorie:"""
-prompt = PromptTemplate.from_template(prompt_annee_edition)
-
-# langchain :
-chain_first_published_date = (
-    {"oeuvre": RunnablePassthrough()}
-    | prompt
-    | llm_gpt4o
-    | StrOutputParser()
-)
-
-	
-
-def first_published_date(oeuvre):
-    result = chain_first_published_date.invoke(oeuvre)
-    return result
+chain_first_published_date = None
+if llm_gpt4o is not None:
+    prompt = PromptTemplate.from_template(prompt_annee_edition)
+    chain_first_published_date = (
+        {"oeuvre": RunnablePassthrough()}
+        | prompt
+        | llm_gpt4o
+        | StrOutputParser()
+    )
 
 
 # check si la colonne "First published date"    existe, sinon la créer
@@ -261,7 +280,7 @@ if 'First published date' not in df_updated.columns:
 nb_books_sans_année = df_updated[(df_updated['First published date'] == '') | (pd.isna(df_updated['First published date']))].shape[0]
 
 df_updated['First published date'] = df_updated.apply(
-    lambda row: first_published_date(row['oeuvre']) if pd.isna(row['First published date']) or row['First published date'] == '' else row['First published date'],
+    lambda row: enrich_with_gpt(chain_first_published_date, row['oeuvre'], row['First published date']) if pd.isna(row['First published date']) or row['First published date'] == '' else row['First published date'],
     axis=1
 )
 
@@ -284,7 +303,7 @@ print("="*80)
 
 
 # Exporter la tables vers un fichier Parquet
-df_updated.to_parquet(parquet_path,engine='pyarrow')
+df_updated.to_parquet(parquet_path)
 df_book = df_updated
 
 parquet_stat_path = Path(__file__).parent.parent.parent / "1.data" / "2.processed" / "stats_lecture.parquet"
@@ -490,9 +509,9 @@ df_book_updated.rename(columns={
 df_stat = df_stat.merge(df_book_updated[['id', 'Titre', 'Auteurs']], left_on='id_book', right_on='id', how='left').drop(columns='id')
 parquet_path_updated = Path(__file__).parent.parent.parent / "1.data" / "2.processed" / "df_book_updated.parquet"
 # output des tables dans le dossier sources python
-df_book_updated.to_parquet(parquet_path_updated, engine='pyarrow', index=False)
+df_book_updated.to_parquet(parquet_path_updated, index=False)
 # df_book_updated.to_excel(Path(__file__).parent.parent.parent / "1.data" / "2.processed" / "df_book_updated.xlsx", index=False) # excel output for debug 
-df_stat.to_parquet(parquet_stat_path, engine='pyarrow')
+df_stat.to_parquet(parquet_stat_path)
 print("Préparation df pour dataviz terminée")
 print("="*80)
 print("="*80)
