@@ -118,6 +118,7 @@ def build_html(catalog: pd.DataFrame) -> str:
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bibliotheque de lecture</title>
+  <link rel="icon" href="data:image/svg+xml,&lt;svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27&gt;&lt;text y=%27.9em%27 font-size=%2790%27&gt;%F0%9F%93%9A%EF%B8%8F&lt;/text&gt;&lt;/svg&gt;">
   <link href="https://cdn.jsdelivr.net/npm/tabulator-tables@6.3.0/dist/css/tabulator.min.css" rel="stylesheet">
   <style>
     :root {{
